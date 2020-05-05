@@ -3,6 +3,7 @@ package com.mmazanek.atp.model.inference;
 public class FileLoad extends Inference {
 
 	private static final String NAME = "file";
+	private static final String STATUS = "";
 	
 	private String filename;
 	
@@ -17,6 +18,11 @@ public class FileLoad extends Inference {
 	@Override
 	public String getName() {
 		return NAME;
+	}
+
+	@Override
+	public String getStatus() {
+		return STATUS;
 	}
 
 }

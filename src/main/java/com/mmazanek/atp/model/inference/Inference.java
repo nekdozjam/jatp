@@ -14,4 +14,5 @@ public abstract class Inference {
 	}
 	
 	public abstract String getName();
+	public abstract String getStatus();
 }

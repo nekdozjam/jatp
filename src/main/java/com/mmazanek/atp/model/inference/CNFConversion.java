@@ -5,6 +5,7 @@ import com.mmazanek.atp.model.KnowledgeEntry;
 public class CNFConversion extends Inference {
 
 	private static final String NAME = "cnf";
+	private static final String STATUS = "thm";
 	
 	public CNFConversion(KnowledgeEntry ancestor) {
 		super(ancestor);
@@ -13,6 +14,11 @@ public class CNFConversion extends Inference {
 	@Override
 	public String getName() {
 		return NAME;
+	}
+
+	@Override
+	public String getStatus() {
+		return STATUS;
 	}
 
 }

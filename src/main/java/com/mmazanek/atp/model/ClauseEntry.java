@@ -5,16 +5,17 @@ import java.util.Set;
 
 import com.mmazanek.atp.model.fol.Clause;
 import com.mmazanek.atp.model.fol.Variable;
+import com.mmazanek.atp.model.inference.Inference;
 
 public class ClauseEntry implements KnowledgeEntry {
 	private String name;
 	private Type type;
 	private Clause clause;
-	private KnowledgeEntry[] ancestors;
+	private Inference ancestors;
 	private Set<Variable> variables;
 	private boolean active = true;
 	
-	public ClauseEntry(String name, Type type, Clause clause, Set<Variable> variables, KnowledgeEntry... ancestors) {
+	public ClauseEntry(String name, Type type, Clause clause, Set<Variable> variables, Inference ancestors) {
 		this.name = name;
 		this.type = type;
 		this.clause = clause;
@@ -28,7 +29,7 @@ public class ClauseEntry implements KnowledgeEntry {
 	}
 	
 	@Override
-	public KnowledgeEntry[] getAncestors() {
+	public Inference getAncestors() {
 		return ancestors;
 	}
 

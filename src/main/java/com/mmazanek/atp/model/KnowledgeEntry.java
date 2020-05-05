@@ -1,5 +1,7 @@
 package com.mmazanek.atp.model;
 
+import com.mmazanek.atp.model.inference.Inference;
+
 public interface KnowledgeEntry {
 	public static enum Type {
 		AXIOM,
@@ -10,7 +12,7 @@ public interface KnowledgeEntry {
 	}
 	
 	public String getName();
-	public KnowledgeEntry[] getAncestors();
+	public Inference getAncestors();
 	public Type getType();
 	public boolean isActive();
 }

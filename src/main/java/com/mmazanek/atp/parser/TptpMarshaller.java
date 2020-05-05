@@ -18,6 +18,8 @@ import com.mmazanek.atp.model.fol.PredicateSymbol;
 import com.mmazanek.atp.model.fol.QuantifierFormula;
 import com.mmazanek.atp.model.fol.Term;
 import com.mmazanek.atp.model.fol.Variable;
+import com.mmazanek.atp.model.inference.FileLoad;
+import com.mmazanek.atp.model.inference.Inference;
 import com.mmazanek.atp.model.fol.QuantifierFormula.Quantifier;
 
 public class TptpMarshaller implements LogicMarshaller {
@@ -142,6 +144,30 @@ public class TptpMarshaller implements LogicMarshaller {
 		}
 	}
 
+	
+	private void marshallInference(KnowledgeEntry entry) {
+		Inference inference = entry.getAncestors();
+		if (inference instanceof FileLoad) {
+			writer.print("file('");
+			writer.print(((FileLoad)inference).getFilename());
+			writer.print("', ");
+			writer.print(entry.getName());
+			writer.print(")");
+		} else {
+			writer.print("inference(");
+			writer.print(inference.getName());
+			writer.print(",[status(");
+			writer.print(inference.getStatus());
+			writer.print(")], [");
+			for (int i = 0; i < inference.getAncestors().length; i++) {
+				if (i != 0) {
+					writer.print(",");
+				}
+				writer.print(inference.getAncestors()[i].getName());
+			}
+			writer.print("])");
+		}
+	}
 
 	@Override
 	public void marshallFormula(FormulaEntry formula) {
@@ -152,7 +178,10 @@ public class TptpMarshaller implements LogicMarshaller {
 			writer.print(formula.getType().toString().toLowerCase());
 			writer.print(", ");
 			doMarshallFormula(formula.getFormula());
-			//TODO: meta
+			if (formula.getAncestors() != null) {
+				writer.print(", ");
+				marshallInference(formula);
+			}
 			writer.print(").\n");
 		} catch (Exception e) {
 			//TODO: SZS ERROR
@@ -168,16 +197,9 @@ public class TptpMarshaller implements LogicMarshaller {
 			writer.print(clause.getType().toString().toLowerCase());
 			writer.print(", ");
 			doMarshallClause(clause.getClause());
-			//TODO: meta
-			if (clause.getAncestors() != null && clause.getAncestors().length > 0) {
-				writer.print(", [");
-				for (int i = 0; i < clause.getAncestors().length; i++) {
-					if (i != 0) {
-						writer.print(", ");
-					}
-					writer.print(clause.getAncestors()[i].getName());
-				}
-				writer.print("]");
+			if (clause.getAncestors() != null) {
+				writer.print(", ");
+				marshallInference(clause);
 			}
 			writer.print(").\n");
 		} catch (Exception e) {
@@ -188,8 +210,11 @@ public class TptpMarshaller implements LogicMarshaller {
 	}
 
 	public void marshallKnowledgeEntryWithAncestors(KnowledgeEntry entry) {
-		for (KnowledgeEntry e : entry.getAncestors()) {
-			marshallKnowledgeEntryWithAncestors(e);
+		Inference inference = entry.getAncestors();
+		if (inference != null) {
+			for (KnowledgeEntry e : inference.getAncestors()) {
+				marshallKnowledgeEntryWithAncestors(e);
+			}
 		}
 		if (entry instanceof FormulaEntry) {
 			marshallFormula((FormulaEntry) entry);

@@ -25,7 +25,7 @@ import com.mmazanek.atp.model.fol.PredicateSymbol;
 import com.mmazanek.atp.model.fol.QuantifierFormula;
 import com.mmazanek.atp.model.fol.Term;
 import com.mmazanek.atp.model.fol.Variable;
-
+import com.mmazanek.atp.model.inference.FileLoad;
 import com.mmazanek.atp.model.fol.QuantifierFormula.Quantifier;
 
 public class TptpParser implements LogicParser {
@@ -97,14 +97,14 @@ public class TptpParser implements LogicParser {
 				debug("\nfof - " + type + " - " + name);
 				Set<Variable> variables = new LinkedHashSet<>();
 				Formula formula = loadFof(reader, kb, variables);
-				FormulaEntry entry = new FormulaEntry(name, getType(type), formula, variables);
+				FormulaEntry entry = new FormulaEntry(name, getType(type), formula, variables, new FileLoad(file.getAbsolutePath()));
 				kb.addFormulaEntry(entry);
 			} else if (formulaType.equals("cnf")) {
 				debug("\ncnf - " + type + " - " + name);
 
 				Set<Variable> variables = new LinkedHashSet<Variable>();
 				Clause clause = loadCnf(reader, kb, variables);
-				kb.addClauseEntry(new ClauseEntry(name, getType(type), clause, variables));
+				kb.addClauseEntry(new ClauseEntry(name, getType(type), clause, variables, new FileLoad(file.getAbsolutePath())));
 			} else {
 				System.out.println("Wrong input format - expected cnf or fof");
 				return null;

@@ -5,6 +5,7 @@ import com.mmazanek.atp.model.KnowledgeEntry;
 public class Factoring extends Inference {
 
 	private static final String NAME = "factor";
+	private static final String STATUS = "thm";
 	
 	public Factoring(KnowledgeEntry... ancestors) {
 		super(ancestors);
@@ -16,6 +17,11 @@ public class Factoring extends Inference {
 	@Override
 	public String getName() {
 		return NAME;
+	}
+
+	@Override
+	public String getStatus() {
+		return STATUS;
 	}
 	
 }

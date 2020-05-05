@@ -20,6 +20,10 @@ import com.mmazanek.atp.model.fol.Substitution;
 import com.mmazanek.atp.model.fol.Symbol;
 import com.mmazanek.atp.model.fol.Term;
 import com.mmazanek.atp.model.fol.Variable;
+import com.mmazanek.atp.model.inference.AssumeNegation;
+import com.mmazanek.atp.model.inference.BinaryResolution;
+import com.mmazanek.atp.model.inference.CNFConversion;
+import com.mmazanek.atp.model.inference.Factoring;
 import com.mmazanek.atp.parser.TptpMarshaller;
 
 /**
@@ -106,7 +110,7 @@ public class KnowledgeBase {
 		
 		for (Clause c : clauses) {
 			Clause cc = (Clause) rewriteVariables(c);
-			addClause(new ClauseEntry(generateEntryName(), formulaEntry.getType() == Type.NEGATED_CONJECTURE ? Type.NEGATED_CONJECTURE : Type.PLAIN, cc, cc.collectVariables(), formulaEntry)); //TODO: variables, inference type
+			addClause(new ClauseEntry(generateEntryName(), formulaEntry.getType() == Type.NEGATED_CONJECTURE ? Type.NEGATED_CONJECTURE : Type.PLAIN, cc, cc.collectVariables(), new CNFConversion(formulaEntry)));
 		}
 	}
 	
@@ -217,7 +221,7 @@ public class KnowledgeBase {
 	}
 	
 	private FormulaEntry assumeNegation(FormulaEntry e) {
-		return new FormulaEntry(generateEntryName(), Type.NEGATED_CONJECTURE, new LogicalFormula(Connective.NOT, new Formula[] {e.getFormula()}), e.getVariables()); //TODO: recreate variables
+		return new FormulaEntry(generateEntryName(), Type.NEGATED_CONJECTURE, new LogicalFormula(Connective.NOT, new Formula[] {e.getFormula()}), e.getVariables(), new AssumeNegation(e)); //TODO: recreate variables
 	}
 	
 	private Substitution mgu(Term t1, Term t2, Substitution substitution) {
@@ -309,7 +313,7 @@ public class KnowledgeBase {
 						Clause newClause = new Clause(newList);
 						newClause = (Clause) newClause.replace(s);
 						newClause = (Clause) rewriteVariables(newClause);
-						ClauseEntry cnew = new ClauseEntry(generateEntryName(), c1.getType() == Type.NEGATED_CONJECTURE || c2.getType() == Type.NEGATED_CONJECTURE ? Type.NEGATED_CONJECTURE : Type.PLAIN, newClause, null, c1, c2);
+						ClauseEntry cnew = new ClauseEntry(generateEntryName(), c1.getType() == Type.NEGATED_CONJECTURE || c2.getType() == Type.NEGATED_CONJECTURE ? Type.NEGATED_CONJECTURE : Type.PLAIN, newClause, null, new BinaryResolution(c1, c2));
 						return cnew;
 					}
 				}
@@ -338,7 +342,7 @@ public class KnowledgeBase {
 						}
 					}
 					Clause newClause = (Clause) rewriteVariables(new Clause(literals));
-					newEntries.add(new ClauseEntry(generateEntryName(), clause.getType() == Type.NEGATED_CONJECTURE ? Type.NEGATED_CONJECTURE : Type.PLAIN, newClause, null, clause));
+					newEntries.add(new ClauseEntry(generateEntryName(), clause.getType() == Type.NEGATED_CONJECTURE ? Type.NEGATED_CONJECTURE : Type.PLAIN, newClause, null, new Factoring(clause)));
 				}
 			}
 		}
@@ -361,7 +365,7 @@ public class KnowledgeBase {
 	public void clausifyAll() {
 		for (ClauseEntry c : clauses) {
 			if (c.getType() == Type.CONJECTURE) {
-				clausify(new FormulaEntry(generateEntryName(), Type.NEGATED_CONJECTURE, c.getClause().pushNegations(true), null, c));
+				clausify(new FormulaEntry(generateEntryName(), Type.NEGATED_CONJECTURE, c.getClause().pushNegations(true), null, new AssumeNegation(c)));
 			}
 		}
 		
