@@ -1,0 +1,5 @@
+include('incl.txt').
+
+cnf(c,conjecture,
+    ( equalish(a,X) )).
+    
