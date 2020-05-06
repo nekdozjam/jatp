@@ -125,6 +125,12 @@ public class KnowledgeBase {
 		return formula.rewriteVariables(rewriteMap);
 	}
 	
+	private void addGenerated(ClauseEntry entry) {
+		//TODO: optimisation
+		
+		waiting.add(entry);
+	}
+	
 	// LOOP
 	//  - select current clause
 	//  - select second clause
@@ -136,6 +142,8 @@ public class KnowledgeBase {
 		
 		long startTime = System.currentTimeMillis();
 		long endTime = startTime + maxtime * 1000;
+
+		TptpMarshaller marshaller = new TptpMarshaller(System.out);
 		
 		for (ClauseEntry e : clauses) {
 			waiting.add(e);
@@ -175,46 +183,45 @@ public class KnowledgeBase {
 					return;
 				}
 				
+				
 				//infer current with active entries
-				ClauseEntry newlyInferred = resolve(currentEntry, secondEntry);
+				List<ClauseEntry> resolvents = resolve(currentEntry, secondEntry);
 				//TODO: more inference rules
 				
 				//apply postinference rules
-				if (newlyInferred == null) {
+				if (resolvents == null || resolvents.size() == 0) {
 					continue;
 				}
-				
-				//check for contradiction
-				if (newlyInferred.getClause().isEmpty()) {
-					//Proof found
-					System.out.println("% ***Proof found!***");
-					System.out.println("% Run time: " + (System.currentTimeMillis() - startTime) + "ms");
-					new TptpMarshaller(System.out).marshallKnowledgeEntryWithAncestors(newlyInferred);
-					return;
-				}
-				
-				List<ClauseEntry> factoredNewlyInferred = factor(newlyInferred);
-				if (factoredNewlyInferred != null) {
-					for (ClauseEntry e : factoredNewlyInferred) {
-						if (e.getClause().isEmpty()) {
-							//Proof found
-							System.out.println("% ***Proof found!***");
-							System.out.println("% Run time: " + (System.currentTimeMillis() - startTime) + "ms");
-							new TptpMarshaller(System.out).marshallKnowledgeEntryWithAncestors(e);
-							return;
-						}
-						
-						//TODO: possible place for optimisation
-						
-						waiting.add(e);
+				for (ClauseEntry newlyInferred : resolvents) {
+					//check for contradiction
+					if (newlyInferred.getClause().isEmpty()) {
+						//Proof found
+						System.out.println("% ***Proof found!***");
+						System.out.println("% Run time: " + (System.currentTimeMillis() - startTime) + "ms");
+						new TptpMarshaller(System.out).marshallKnowledgeEntryWithAncestors(newlyInferred);
+						return;
 					}
+					
+					List<ClauseEntry> factoredNewlyInferred = factor(newlyInferred);
+					if (factoredNewlyInferred != null) {
+						for (ClauseEntry e : factoredNewlyInferred) {
+							if (e.getClause().isEmpty()) {
+								//Proof found
+								System.out.println("% ***Proof found!***");
+								System.out.println("% Run time: " + (System.currentTimeMillis() - startTime) + "ms");
+								new TptpMarshaller(System.out).marshallKnowledgeEntryWithAncestors(e);
+								return;
+							}
+							//System.out.print("% Adding ");
+							//marshaller.marshallClause(e);
+							addGenerated(e);
+						}
+					}
+
+					//System.out.print("% Adding ");
+					//marshaller.marshallClause(newlyInferred);
+					addGenerated(newlyInferred);
 				}
-				
-				
-				//add to waiting
-				waiting.add(newlyInferred);
-				
-				//TODO: possible place for optimisation
 			}
 		}
 		
@@ -228,8 +235,6 @@ public class KnowledgeBase {
 		if (t1 instanceof Variable) {
 			Variable var1 = (Variable) t1;
 			
-			//TODO: check existence of variable in substitution
-			
 			if (t2 instanceof Variable) {
 				// Var Var
 				Variable var2 = (Variable) t2;
@@ -240,14 +245,19 @@ public class KnowledgeBase {
 				}
 			} else {
 				// Var fnc
-				//TODO: check variable occurance
+				if (t2.collectVariables().contains(var1)) {
+					return null;
+				}
 				substitution.apply(var1, t2);
 			}
 		} else {
 			if (t2 instanceof Variable) {
 				// fcn Var
-				//TODO: check variable occurance
-				substitution.apply((Variable)t2, t1);
+				Variable var2 = (Variable) t2;
+				if (t1.collectVariables().contains(var2)) {
+					return null;
+				}
+				substitution.apply(var2, t1);
 			} else {
 				// fnc fnc
 				Substitution localSubstitution = new Substitution();
@@ -259,7 +269,7 @@ public class KnowledgeBase {
 				Iterator<? extends Term> funcTerms2 = fnc2.getParameters().iterator();
 				for (Term funcTerm1 : fnc1.getParameters()) {
 					localSubstitution = mgu(funcTerm1.replace(localSubstitution), funcTerms2.next().replace(localSubstitution), localSubstitution);
-					if (substitution == null) {
+					if (localSubstitution == null) {
 						return null;
 					}
 				}
@@ -289,7 +299,8 @@ public class KnowledgeBase {
 		return s;
 	}
 	
-	// Attempt to resolve two clauses
+	//TODO: generate all resolvents!
+	// Attempt to resolve two clauses - binary resolution
 	//
 	//each clause has its own variables
 	//we can unify complementary literals only, as the resulting substitution wont collide.
@@ -297,7 +308,9 @@ public class KnowledgeBase {
 	// 2. - find mgu of those literals
 	// 3. - if mgu exist, return mgu, else 1
 	// 4. - if there are no more complementary literals, return null
-	private ClauseEntry resolve(ClauseEntry c1, ClauseEntry c2) { //TODO: change this to resolution to retain complementary literals
+	private List<ClauseEntry> resolve(ClauseEntry c1, ClauseEntry c2) {
+		List<ClauseEntry> resolvents = new LinkedList<>();
+		
 		for (Literal left : c1.getClause().getLiterals()) {
 			boolean ln = left.isNegated();
 			PredicateSymbol ls = left.getPredicate();
@@ -314,12 +327,13 @@ public class KnowledgeBase {
 						newClause = (Clause) newClause.replace(s);
 						newClause = (Clause) rewriteVariables(newClause);
 						ClauseEntry cnew = new ClauseEntry(generateEntryName(), c1.getType() == Type.NEGATED_CONJECTURE || c2.getType() == Type.NEGATED_CONJECTURE ? Type.NEGATED_CONJECTURE : Type.PLAIN, newClause, null, new BinaryResolution(c1, c2));
-						return cnew;
+						resolvents.add(cnew);
+						//return cnew;
 					}
 				}
 			}
 		}
-		return null;
+		return resolvents;
 	}
 	
 	// Attempt to factor a clause
@@ -333,7 +347,12 @@ public class KnowledgeBase {
 		List<ClauseEntry> newEntries = new LinkedList<>();
 		for (int i = 0; i < literals.size(); i++) {
 			for (int j = i+1; j < literals.size(); j++) {
-				Substitution s = mgu(literals.get(i), literals.get(j));
+				Literal left = literals.get(i);
+				Literal right = literals.get(j);
+				if (left.isNegated() != right.isNegated()) {
+					continue;
+				}
+				Substitution s = mgu(left, right);
 				if (s != null) {
 					List<Literal> literals2 = new LinkedList<>();
 					for (int k = 0; k < literals.size(); k++) {
@@ -341,13 +360,12 @@ public class KnowledgeBase {
 							literals2.add(literals.get(k).replace(s));
 						}
 					}
-					Clause newClause = (Clause) rewriteVariables(new Clause(literals));
+					Clause newClause = (Clause) rewriteVariables(new Clause(literals2));
 					newEntries.add(new ClauseEntry(generateEntryName(), clause.getType() == Type.NEGATED_CONJECTURE ? Type.NEGATED_CONJECTURE : Type.PLAIN, newClause, null, new Factoring(clause)));
 				}
 			}
 		}
-		
-		return null;
+		return newEntries;
 	}
 	
 	private FunctionSymbol generateSkolemFunctionSymbol(int arity) {

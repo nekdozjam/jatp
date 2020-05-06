@@ -59,7 +59,7 @@ To set parent directory for problem files
 
 ```
 -b problemfiles
--- basedir problemfiles
+--basedir problemfiles
 ```
 
 To set maximum solving time

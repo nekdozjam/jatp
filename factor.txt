@@ -1,0 +1,7 @@
+cnf(a,axiom,
+    ( p(X) | p(f(X)) )).
+cnf(b,axiom,
+    ( ~p(X) | p(f(Y)) )).
+cnf(c,negated_conjecture,
+    ( ~p(X) | ~p(f(X)) )).
+    
