@@ -1,6 +1,7 @@
 package com.mmazanek.atp.model.fol;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,5 +64,23 @@ public class FunctionTerm extends Term {
 			f.variables = variables2;
 		}
 		return f;
+	}
+
+	@Override
+	public boolean deduces(Term other, Map<Variable, Term> replaceMap) {
+		if (other instanceof Variable) {
+			return false;
+		}
+		FunctionTerm otherTerm = (FunctionTerm)other;
+		if (otherTerm.symbol != symbol) {
+			return false;
+		}
+		Iterator<? extends Term> otherParameters = otherTerm.parameters.iterator();
+		for (Term parameter : parameters) {
+			if (!parameter.deduces(otherParameters.next(), replaceMap)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

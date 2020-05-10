@@ -1,6 +1,8 @@
 package com.mmazanek.atp.model.fol;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,7 +17,9 @@ public class Clause implements Formula {
 	private Set<Variable> variables = null;
 	
 	public Clause(List<Literal> literals) {
+		//sort!
 		this.literals = literals;
+		literals.sort((l1, l2) -> l1.getPredicate().getId() - l2.getPredicate().getId());
 	}
 	
 	public List<Literal> getLiterals() {
@@ -93,5 +97,38 @@ public class Clause implements Formula {
 			c.variables = variables2;
 		}
 		return c;
+	}
+	
+	public boolean deduces(Clause clause) {
+		//this has variables - substitution can only happen on this
+		List<Literal> otherLiterals = clause.getLiterals();
+		
+		if (otherLiterals.size() != literals.size()) {
+			return false;
+		}
+		
+		//fast check first
+		Iterator<Literal> otherLiteralsIterator = otherLiterals.iterator();
+		for (Literal literal : literals) {
+			Literal other = otherLiteralsIterator.next();
+			if (literal.isNegated() != other.isNegated()) {
+				return false;
+			}
+			if (! literal.getPredicate().equals(other.getPredicate())) {
+				return false;
+			}
+		}
+		
+		Map<Variable, Term> replaceMap = new HashMap<>();
+		
+		//we need sort the literals first!
+		
+		otherLiteralsIterator = otherLiterals.iterator();
+		for (Literal literal : literals) {
+			if (!literal.deduces(otherLiteralsIterator.next(), replaceMap)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

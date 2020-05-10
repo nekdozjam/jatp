@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.mmazanek.atp.ProgramProperties;
 import com.mmazanek.atp.model.KnowledgeEntry.Type;
 import com.mmazanek.atp.model.fol.Clause;
 import com.mmazanek.atp.model.fol.Formula;
@@ -40,6 +41,8 @@ public class KnowledgeBase {
 	private List<ClauseEntry> active = new LinkedList<>();
 	private List<ClauseEntry> waiting = new LinkedList<>();
 	
+	private List<ClauseEntry> units = new LinkedList<>();
+	
 	private ClauseEntry selectedConjecture = null;
 	
 	private static final String VARIABLE_PREFIX = "X";
@@ -50,6 +53,8 @@ public class KnowledgeBase {
 	private int nextSkolemFnc = 1;
 	private int nextEntryId = 1;
 	private int nextVarId;
+	
+	private TptpMarshaller marshaller = new TptpMarshaller(System.out);
 	
 	protected KnowledgeBase(KnowledgeBase.Builder builder) {
 		formulae = builder.formulae;
@@ -77,6 +82,9 @@ public class KnowledgeBase {
 	
 	private void addClause(ClauseEntry clause) {
 		waiting.add(clause);
+		if (clause.getClause().getLiterals().size() == 1) {
+			units.add(clause);
+		}
 	}
 	
 	private void clausify(FormulaEntry formulaEntry) {
@@ -126,7 +134,48 @@ public class KnowledgeBase {
 	}
 	
 	private void addGenerated(ClauseEntry entry) {
+		//TODO: remove only newly added : remove existing
 		//TODO: optimisation
+		//TODO: optimisation
+		
+		if (ProgramProperties.maxClauseSize != 0) {
+			if (entry.getClause().getLiterals().size() > ProgramProperties.maxClauseSize) {
+				return;
+			}
+		}
+		int variables = entry.getClause().collectVariables().size();
+		if (ProgramProperties.maxClauseVariables != 0) {
+			if (variables > ProgramProperties.maxClauseVariables) {
+				return;
+			}
+		}
+		
+		for (ClauseEntry activeEntry : active) {
+			//if (print && activeEntry.getName().equals("f__352")) marshaller.marshallClause(activeEntry);
+			if (activeEntry.getClause().deduces(entry.getClause())) {
+				//We can substitute existing clause to get the new one, so we dont need to save it
+				//System.out.println("saved: " + (++saved));
+				return;
+			}
+		}
+		
+		for (ClauseEntry waitingEntry : waiting) {
+			//if (print && activeEntry.getName().equals("f__352")) marshaller.marshallClause(activeEntry);
+			if (waitingEntry.getClause().deduces(entry.getClause())) {
+				//We can substitute existing clause to get the new one, so we dont need to save it
+				//System.out.println("saved: " + (++saved));
+				return;
+			}
+		}
+		
+		if (entry.getClause().getLiterals().size() == 1) {
+			units.add(entry);
+		}
+		
+		if (ProgramProperties.debug) {
+			System.out.print("# adding " + variables + " ");
+			marshaller.marshallClause(entry);
+		}
 		
 		waiting.add(entry);
 	}
@@ -142,8 +191,6 @@ public class KnowledgeBase {
 		
 		long startTime = System.currentTimeMillis();
 		long endTime = startTime + maxtime * 1000;
-
-		TptpMarshaller marshaller = new TptpMarshaller(System.out);
 		
 		for (ClauseEntry e : clauses) {
 			waiting.add(e);
@@ -159,15 +206,20 @@ public class KnowledgeBase {
 			}
 		}
 		if (selectedConjecture == null) {
-			System.out.println("solver start error - no conjecture found");
+			System.out.println("# solver start error - no conjecture found");
 			return;
 		}
 		waiting.add(selectedConjecture);
 		
+
+		int currentTarget = 0;
+		int counter = 0;
+		int depth = 0;
+		
 		while(true) {
 			if (waiting.size() < 1) {
-				System.out.println("proof not found - no more clauses to solve");
-				System.out.println("active size: " + active.size());
+				System.out.println("# proof not found - no more clauses to solve");
+				System.out.println("# active size: " + active.size());
 				//TODO: result not found
 				break;
 			}
@@ -176,10 +228,22 @@ public class KnowledgeBase {
 			active.add(currentEntry);
 			waiting.remove(0);
 			
+			if (ProgramProperties.printLoopDepth) {
+				counter++;
+				if (counter >= currentTarget) {
+					counter = 0;
+					System.out.println("# LOOP DEPTH: " + (depth++));
+					System.out.println("# WAITING SIZE: " + waiting.size());
+					System.out.println("# ACTIVE SIZE: " + active.size());
+					currentTarget = waiting.size();
+				}
+			}
+			
 			for (ClauseEntry secondEntry : active) {
 				if (System.currentTimeMillis() > endTime) {
-					System.out.println("proof not found - timeout");
-					System.out.println("waiting clauses: " + waiting.size());
+					System.out.println("# SZS status Timeout");
+					System.out.println("# waiting clauses: " + waiting.size());
+					System.out.println("# active clauses: " + active.size());
 					return;
 				}
 				
@@ -196,24 +260,18 @@ public class KnowledgeBase {
 					//check for contradiction
 					if (newlyInferred.getClause().isEmpty()) {
 						//Proof found
-						System.out.println("% ***Proof found!***");
-						System.out.println("% Run time: " + (System.currentTimeMillis() - startTime) + "ms");
+						System.out.println("# Proof found!");
+						System.out.println("# SZS status Unsatisfiable");
+						System.out.println("# SZS output start CNFRefutation");
 						new TptpMarshaller(System.out).marshallKnowledgeEntryWithAncestors(newlyInferred);
+						System.out.println("# SZS output end CNFRefutation");
+						System.out.println("# Run time: " + (System.currentTimeMillis() - startTime) + "ms");
 						return;
 					}
 					
 					List<ClauseEntry> factoredNewlyInferred = factor(newlyInferred);
 					if (factoredNewlyInferred != null) {
 						for (ClauseEntry e : factoredNewlyInferred) {
-							if (e.getClause().isEmpty()) {
-								//Proof found
-								System.out.println("% ***Proof found!***");
-								System.out.println("% Run time: " + (System.currentTimeMillis() - startTime) + "ms");
-								new TptpMarshaller(System.out).marshallKnowledgeEntryWithAncestors(e);
-								return;
-							}
-							//System.out.print("% Adding ");
-							//marshaller.marshallClause(e);
 							addGenerated(e);
 						}
 					}
@@ -299,7 +357,7 @@ public class KnowledgeBase {
 		return s;
 	}
 	
-	//TODO: generate all resolvents!
+	//TODO: check self resolution variables
 	// Attempt to resolve two clauses - binary resolution
 	//
 	//each clause has its own variables

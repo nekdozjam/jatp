@@ -9,4 +9,5 @@ public abstract class Term {
 	public abstract Term replace(Map<Variable, Term> replaceMap);
 	public abstract Set<Variable> collectVariables();
 	public abstract Term rewriteVariables(Map<Variable, Variable> rewriteMap);
+	public abstract boolean deduces(Term other, Map<Variable, Term> replaceMap);
 }

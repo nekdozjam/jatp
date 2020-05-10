@@ -80,5 +80,4 @@ java -jar target/jatp-1.0-SNAPSHOT.jar -t 150 -i includes testi.txt
 * **Martin Mazánek** - [nekdozjam](https://github.com/nekdozjam)
 
 ## License
-* TBD
-This project is licensed under the GPL License - see the [LICENSE](LICENSE) file for details
+* This project is licensed under the GPL License - see the [LICENSE](LICENSE) file for details

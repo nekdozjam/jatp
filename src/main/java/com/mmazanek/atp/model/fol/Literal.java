@@ -2,6 +2,7 @@ package com.mmazanek.atp.model.fol;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -98,5 +99,21 @@ public class Literal implements Formula {
 			newLiteral.variables = variables2;
 		}
 		return newLiteral;
+	}
+	
+	public boolean deduces(Literal literal, Map<Variable, Term> replaceMap) {
+		if (this.negated != literal.negated) {
+			return false;
+		}
+		if (this.predicate != literal.predicate) {
+			return false;
+		}
+		Iterator<Term> otherTerms = literal.terms.iterator();
+		for (Term term : terms) {
+			if (!term.deduces(otherTerms.next(), replaceMap)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

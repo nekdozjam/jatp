@@ -53,4 +53,38 @@ public class Variable extends Term {
 	public Term rewriteVariables(Map<Variable, Variable> rewriteMap) {
 		return rewriteMap.getOrDefault(this, this);
 	}
+
+	@Override
+	public boolean deduces(Term other, Map<Variable, Term> replaceMap) {
+		if (this.equals(other)) {
+			return true;
+		}
+		Term mapped = replaceMap.get(this);
+		if (mapped == null) {
+			if (other.collectVariables().contains(this)) {
+				return false;
+			}
+			replaceMap.put(this, other);
+			return true;
+		}
+		if (mapped instanceof Variable) {
+			return other.equals(mapped);
+		}
+		/**
+		if (other instanceof Variable) {
+			if (mapped instanceof Variable) {
+				System.out.println(id+" other: " + ((Variable)other).id + " mapped: " + ((Variable)mapped).id);
+			} else {
+				System.out.println(id+" other: " + ((Variable)other).id);
+			}
+		} else {
+			if (mapped instanceof Variable) {
+				System.out.println(id+" oF mV");
+			} else {
+				System.out.println(id+" oF mF");
+			}
+		}
+		**/
+		return mapped.deduces(other, replaceMap);
+	}
 }
