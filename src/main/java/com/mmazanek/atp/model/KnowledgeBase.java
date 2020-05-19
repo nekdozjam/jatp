@@ -1,5 +1,6 @@
 package com.mmazanek.atp.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -17,6 +18,7 @@ import com.mmazanek.atp.model.fol.Literal;
 import com.mmazanek.atp.model.fol.LogicalFormula;
 import com.mmazanek.atp.model.fol.LogicalFormula.Connective;
 import com.mmazanek.atp.model.fol.PredicateSymbol;
+import com.mmazanek.atp.model.fol.RewriteRule;
 import com.mmazanek.atp.model.fol.Substitution;
 import com.mmazanek.atp.model.fol.Symbol;
 import com.mmazanek.atp.model.fol.Term;
@@ -25,6 +27,8 @@ import com.mmazanek.atp.model.inference.AssumeNegation;
 import com.mmazanek.atp.model.inference.BinaryResolution;
 import com.mmazanek.atp.model.inference.CNFConversion;
 import com.mmazanek.atp.model.inference.Factoring;
+import com.mmazanek.atp.model.inference.Paramodulation;
+import com.mmazanek.atp.model.inference.UnitDeletion;
 import com.mmazanek.atp.parser.TptpMarshaller;
 
 /**
@@ -33,7 +37,7 @@ import com.mmazanek.atp.parser.TptpMarshaller;
  *
  */
 public class KnowledgeBase {
-	private HashMap<String, Symbol> symbolMap = new HashMap<>();
+	private Map<String, Symbol> symbolMap = new HashMap<>();
 	
 	private List<FormulaEntry> formulae;
 	private List<ClauseEntry> clauses;
@@ -42,6 +46,7 @@ public class KnowledgeBase {
 	private List<ClauseEntry> waiting = new LinkedList<>();
 	
 	private List<ClauseEntry> units = new LinkedList<>();
+	private List<RewriteRule> rewriteRules = new LinkedList<>();
 	
 	private ClauseEntry selectedConjecture = null;
 	
@@ -134,10 +139,6 @@ public class KnowledgeBase {
 	}
 	
 	private void addGenerated(ClauseEntry entry) {
-		//TODO: remove only newly added : remove existing
-		//TODO: optimisation
-		//TODO: optimisation
-		
 		if (ProgramProperties.maxClauseSize != 0) {
 			if (entry.getClause().getLiterals().size() > ProgramProperties.maxClauseSize) {
 				return;
@@ -150,11 +151,26 @@ public class KnowledgeBase {
 			}
 		}
 		
+		// Unit deletion
+		for (ClauseEntry e : units) {
+			Literal unitLiteral = e.getClause().getLiterals().get(0);
+			List<Literal> newLiterals = new ArrayList<>(entry.getClause().getLiterals().size());
+			for (Literal currentLiteral : entry.getClause().getLiterals()) {
+				if (unitLiteral.isNegated() == currentLiteral.isNegated() || !unitLiteral.deduces(currentLiteral, new HashMap<>())) {
+					newLiterals.add(currentLiteral);
+				}
+			}
+			if (newLiterals.size() != entry.getClause().getLiterals().size()) {
+				if (ProgramProperties.debug) {
+					System.out.println("Deleting");
+				}
+				entry = new ClauseEntry(generateEntryName(), entry.getType(), new Clause(newLiterals), null, new UnitDeletion(entry, e));
+			}
+		}
+		
 		for (ClauseEntry activeEntry : active) {
-			//if (print && activeEntry.getName().equals("f__352")) marshaller.marshallClause(activeEntry);
 			if (activeEntry.getClause().deduces(entry.getClause())) {
 				//We can substitute existing clause to get the new one, so we dont need to save it
-				//System.out.println("saved: " + (++saved));
 				return;
 			}
 		}
@@ -170,11 +186,11 @@ public class KnowledgeBase {
 		
 		if (entry.getClause().getLiterals().size() == 1) {
 			units.add(entry);
-		}
-		
-		if (ProgramProperties.debug) {
-			System.out.print("# adding " + variables + " ");
-			marshaller.marshallClause(entry);
+			if (ProgramProperties.debug) {
+				System.out.print("# Adding unit: ");
+				marshaller.marshallClause(entry);
+			}
+			// TODO: back unit deletion
 		}
 		
 		waiting.add(entry);
@@ -193,6 +209,14 @@ public class KnowledgeBase {
 		long endTime = startTime + maxtime * 1000;
 		
 		for (ClauseEntry e : clauses) {
+			if (e.getClause().getLiterals().size() == 1) {
+				units.add(e);
+				if (ProgramProperties.debug) {
+					System.out.print("# Adding unit: ");
+					marshaller.marshallClause(e);
+				}
+				// TODO: back unit deletion
+			}
 			waiting.add(e);
 		}
 		
@@ -215,6 +239,9 @@ public class KnowledgeBase {
 		int currentTarget = 0;
 		int counter = 0;
 		int depth = 0;
+
+		int remainingAge = ProgramProperties.selectAge;
+		int remainingSmallest = ProgramProperties.selectSmallest;
 		
 		while(true) {
 			if (waiting.size() < 1) {
@@ -224,9 +251,33 @@ public class KnowledgeBase {
 				break;
 			}
 			
-			ClauseEntry currentEntry = waiting.get(0);
-			active.add(currentEntry);
-			waiting.remove(0);
+			ClauseEntry currentEntry = null;
+			
+			if (remainingAge == 0 && remainingSmallest == 0) {
+				remainingAge = ProgramProperties.selectAge;
+				remainingSmallest = ProgramProperties.selectSmallest;
+			}
+			
+			if (remainingAge > 0 ) {
+				// select oldest clause
+				currentEntry = waiting.get(0);
+				active.add(currentEntry);
+				waiting.remove(0);
+				remainingAge--;
+			} else if (remainingSmallest > 0) {
+				// select smallest clause
+				for (ClauseEntry entry : waiting) {
+					if (currentEntry == null || currentEntry.getClause().getLiterals().size() > entry.getClause().getLiterals().size()) {
+						currentEntry = entry;
+					}
+				}
+				active.add(currentEntry);
+				waiting.remove(currentEntry);
+				remainingSmallest--;
+			} else {
+				System.out.println("% SZS status Error");
+				System.out.println("Error in select loop");
+			}
 			
 			if (ProgramProperties.printLoopDepth) {
 				counter++;
@@ -239,18 +290,37 @@ public class KnowledgeBase {
 				}
 			}
 			
+			//System.out.print("Current: ");
+			//marshaller.marshallClause(currentEntry);
+			
 			for (ClauseEntry secondEntry : active) {
 				if (System.currentTimeMillis() > endTime) {
 					System.out.println("# SZS status Timeout");
 					System.out.println("# waiting clauses: " + waiting.size());
 					System.out.println("# active clauses: " + active.size());
+					int[] sizes = new int[100];
+					for (ClauseEntry e : active) {
+						sizes[e.getClause().getLiterals().size()]++;
+					}
+					for (int i = 0; i < 100; i++) {
+						if (sizes[i] != 0) {
+							System.out.println("Clauses size["+i+"]: "+sizes[i]);
+						}
+					}
 					return;
 				}
+				
+				//System.out.print("Second: ");
+				//marshaller.marshallClause(secondEntry);
+				
+				
 				
 				
 				//infer current with active entries
 				List<ClauseEntry> resolvents = resolve(currentEntry, secondEntry);
-				//TODO: more inference rules
+				
+				List<ClauseEntry> modulated = paramodulate(currentEntry, secondEntry);
+				resolvents.addAll(modulated);
 				
 				//apply postinference rules
 				if (resolvents == null || resolvents.size() == 0) {
@@ -276,88 +346,64 @@ public class KnowledgeBase {
 						}
 					}
 
-					//System.out.print("% Adding ");
-					//marshaller.marshallClause(newlyInferred);
 					addGenerated(newlyInferred);
+				}
+				
+			}
+		}
+		
+	}
+	
+	private List<ClauseEntry> paramodulate(ClauseEntry currentEntry, ClauseEntry secondEntry) {
+		List<ClauseEntry> res = new LinkedList<>();
+		
+		for (RewriteRule r : rewriteRules) {
+			List<Clause> generated = r.apply(currentEntry.getClause());
+			
+			for (Clause c : generated) {
+				c = (Clause) rewriteVariables(c);
+				res.add(new ClauseEntry(generateEntryName(), Type.PLAIN, c, null, new Paramodulation(r.getEntry(), currentEntry)));
+			}
+		}
+		
+		for (Literal l : currentEntry.getClause().getLiterals()) {
+			if (l.getPredicate().equals(PredicateSymbol.EQUALS) && !l.isNegated()) {
+				// possible optimisation - term ordering
+				Term left = l.getTerms().get(0);
+				Term right = l.getTerms().get(1);
+				
+				List<Literal> newLiterals = new ArrayList<>(currentEntry.getClause().getLiterals().size());
+				
+				for (Literal ll : currentEntry.getClause().getLiterals()) {
+					if (ll != l) {
+						newLiterals.add(ll);
+					}
+				}
+
+				RewriteRule leftRule = new RewriteRule(left, right, newLiterals, currentEntry);
+				RewriteRule rightRule = new RewriteRule(right, left, newLiterals, currentEntry);
+
+				rewriteRules.add(leftRule);
+				rewriteRules.add(rightRule);
+				
+				List<Clause> newLeft = leftRule.apply(secondEntry.getClause());
+				List<Clause> newRight = rightRule.apply(secondEntry.getClause());
+				newLeft.addAll(newRight);
+		
+				for (Clause c : newLeft) {
+					c = (Clause) rewriteVariables(c);
+					res.add(new ClauseEntry(generateEntryName(), Type.PLAIN, c, null, new Paramodulation(currentEntry, secondEntry)));
 				}
 			}
 		}
 		
+		return res;
 	}
 	
 	private FormulaEntry assumeNegation(FormulaEntry e) {
 		return new FormulaEntry(generateEntryName(), Type.NEGATED_CONJECTURE, new LogicalFormula(Connective.NOT, new Formula[] {e.getFormula()}), e.getVariables(), new AssumeNegation(e)); //TODO: recreate variables
 	}
 	
-	private Substitution mgu(Term t1, Term t2, Substitution substitution) {
-		if (t1 instanceof Variable) {
-			Variable var1 = (Variable) t1;
-			
-			if (t2 instanceof Variable) {
-				// Var Var
-				Variable var2 = (Variable) t2;
-				if (var2.equals(var1)) {
-					return substitution;
-				} else {
-					substitution.apply(var1, t2);
-				}
-			} else {
-				// Var fnc
-				if (t2.collectVariables().contains(var1)) {
-					return null;
-				}
-				substitution.apply(var1, t2);
-			}
-		} else {
-			if (t2 instanceof Variable) {
-				// fcn Var
-				Variable var2 = (Variable) t2;
-				if (t1.collectVariables().contains(var2)) {
-					return null;
-				}
-				substitution.apply(var2, t1);
-			} else {
-				// fnc fnc
-				Substitution localSubstitution = new Substitution();
-				FunctionTerm fnc1 = (FunctionTerm) t1;
-				FunctionTerm fnc2 = (FunctionTerm) t2;
-				if (!fnc1.getSymbol().equals(fnc2.getSymbol())) {
-					return null;
-				}
-				Iterator<? extends Term> funcTerms2 = fnc2.getParameters().iterator();
-				for (Term funcTerm1 : fnc1.getParameters()) {
-					localSubstitution = mgu(funcTerm1.replace(localSubstitution), funcTerms2.next().replace(localSubstitution), localSubstitution);
-					if (localSubstitution == null) {
-						return null;
-					}
-				}
-				substitution.apply(localSubstitution);
-			}
-		}
-		
-		return substitution;
-	}
-	
-	private Substitution mgu(Literal l1, Literal l2) {
-		Substitution s = new Substitution();
-		
-		if (!l1.getPredicate().equals(l2.getPredicate())) {
-			return null;
-		}
-		
-		Iterator<Term> l2iter = l2.getTerms().iterator();
-		for (Term t : l1.getTerms()) {
-			Term t2 = l2iter.next();
-			s = mgu(t.replace(s), t2.replace(s), s);
-			if (s == null) {
-				return null;
-			}
-		}
-		
-		return s;
-	}
-	
-	//TODO: check self resolution variables
 	// Attempt to resolve two clauses - binary resolution
 	//
 	//each clause has its own variables
@@ -374,7 +420,7 @@ public class KnowledgeBase {
 			PredicateSymbol ls = left.getPredicate();
 			for (Literal right : c2.getClause().getLiterals()) {
 				if (right.isNegated() != ln && right.getPredicate().equals(ls)) {
-					Substitution s = mgu(left, right);
+					Substitution s = left.mgu(right);
 					if (s != null) {
 						List<Literal> newList = new LinkedList<>();
 						newList.addAll(c1.getClause().getLiterals());
@@ -410,7 +456,7 @@ public class KnowledgeBase {
 				if (left.isNegated() != right.isNegated()) {
 					continue;
 				}
-				Substitution s = mgu(left, right);
+				Substitution s = left.mgu(right);
 				if (s != null) {
 					List<Literal> literals2 = new LinkedList<>();
 					for (int k = 0; k < literals.size(); k++) {
@@ -486,12 +532,10 @@ public class KnowledgeBase {
 				Symbol s = symbolMap.get(name);
 				if (s instanceof PredicateSymbol) {
 					if (arity != s.getArity()) {
-						//TODO: wrong arity
 						return null;
 					}
 					return (PredicateSymbol) s;
 				} else {
-					//TODO: error wrong symbol type
 					return null;
 				}
 			} else {
@@ -506,12 +550,10 @@ public class KnowledgeBase {
 				Symbol s = symbolMap.get(name);
 				if (s instanceof FunctionSymbol) {
 					if (arity != s.getArity()) {
-						//TODO: wrong arity
 						return null;
 					}
 					return (FunctionSymbol) s;
 				} else {
-					//TODO: error wrong symbol type
 					return null;
 				}
 			} else {

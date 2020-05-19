@@ -2,6 +2,7 @@ package com.mmazanek.atp.parser;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.mmazanek.atp.ProgramProperties;
 import com.mmazanek.atp.model.ClauseEntry;
 import com.mmazanek.atp.model.FormulaEntry;
 import com.mmazanek.atp.model.KnowledgeBase;
@@ -39,7 +41,9 @@ public class TptpParser implements LogicParser {
 	}
 
 	private void debug(String debug) {
-		//System.out.println(debug);
+		if (ProgramProperties.debug) {
+			System.out.println(debug);
+		}
 	}
 	
 	@Override
@@ -128,6 +132,7 @@ public class TptpParser implements LogicParser {
 	private Clause loadCnf(TptpStreamTokenizer reader, KnowledgeBase.Builder kb, Set<Variable> variables) throws IOException {//TODO: equals
 		debug("loadCnf - start");
 		List<Literal> literals = new LinkedList<Literal>();
+		
 		do {
 			Literal l = loadLiteral(reader, kb, variables);
 			literals.add(l);
@@ -335,16 +340,78 @@ public class TptpParser implements LogicParser {
 		
 		String predicateSymbol = reader.next();
 		debug("loadLiteral - " + (negative ? "~" : "") + predicateSymbol);
+		
+		if (Character.isUpperCase(predicateSymbol.charAt(0))) {
+			//Var - expecting != or =
+			Variable variable = null;
+			for (Variable v : variables) {
+				if (v.equals(predicateSymbol)) {
+					variable = v;
+					break;
+				}
+			}
+			if (variable == null) {
+				variable = new Variable(predicateSymbol, kb.generateVarId());
+				variables.add(variable);
+			}
+			
+			if (reader.trySkipOne("!=")) {
+				negative = !negative;
+			} else {
+				reader.skipOne("=");
+			}
+			
+			Term other = loadTerm(reader, kb, variables, null);
+			List<Term> terms = new ArrayList<>(2);
+			terms.add(variable);
+			terms.add(other);
+			return new Literal(PredicateSymbol.EQUALS, negative, terms);
+		}
+		
 		if (reader.trySkipOne("(")) {
 			List<Term> terms = new LinkedList<Term>();
 			do {
 				Term t = loadTerm(reader, kb, variables, null);
 				terms.add(t);
 			} while (reader.trySkipOne(","));
-			reader.skipOne(")");
+			reader.skipOne(")"); //TODO: equals!!
+			
+			if (reader.trySkipOne("!=")) {
+				Term other = loadTerm(reader, kb, variables, null);
+				List<Term> terms2 = new ArrayList<>(2);
+				FunctionSymbol fs = kb.addFunctionSymbol(predicateSymbol, terms.size());
+				terms2.add(new FunctionTerm(fs, terms));
+				terms2.add(other);
+				return new Literal(PredicateSymbol.EQUALS, !negative, terms2);
+			} else if (reader.trySkipOne("=")) {
+				Term other = loadTerm(reader, kb, variables, null);
+				List<Term> terms2 = new ArrayList<>(2);
+				FunctionSymbol fs = kb.addFunctionSymbol(predicateSymbol, terms.size());
+				terms2.add(new FunctionTerm(fs, terms));
+				terms2.add(other);
+				return new Literal(PredicateSymbol.EQUALS, negative, terms2);
+			}
+			
 			PredicateSymbol symbol = kb.addPredicateSymbol(predicateSymbol, terms.size());
 			return new Literal(symbol, negative, terms);
 		} else {
+			
+			if (reader.trySkipOne("!=")) {
+				Term other = loadTerm(reader, kb, variables, null);
+				List<Term> terms2 = new ArrayList<>(2);
+				FunctionSymbol fs = kb.addFunctionSymbol(predicateSymbol, 0);
+				terms2.add(new FunctionTerm(fs, Collections.emptyList()));
+				terms2.add(other);
+				return new Literal(PredicateSymbol.EQUALS, !negative, terms2);
+			} else if (reader.trySkipOne("=")) {
+				Term other = loadTerm(reader, kb, variables, null);
+				List<Term> terms2 = new ArrayList<>(2);
+				FunctionSymbol fs = kb.addFunctionSymbol(predicateSymbol, 0);
+				terms2.add(new FunctionTerm(fs, Collections.emptyList()));
+				terms2.add(other);
+				return new Literal(PredicateSymbol.EQUALS, negative, terms2);
+			}
+			
 			PredicateSymbol symbol = kb.addPredicateSymbol(predicateSymbol, 0);
 			return new Literal(symbol, negative, Collections.emptyList());
 		}

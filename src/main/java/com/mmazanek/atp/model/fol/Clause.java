@@ -121,8 +121,6 @@ public class Clause implements Formula {
 		
 		Map<Variable, Term> replaceMap = new HashMap<>();
 		
-		//we need sort the literals first!
-		
 		otherLiteralsIterator = otherLiterals.iterator();
 		for (Literal literal : literals) {
 			if (!literal.deduces(otherLiteralsIterator.next(), replaceMap)) {
@@ -130,5 +128,46 @@ public class Clause implements Formula {
 			}
 		}
 		return true;
+	}
+	
+	public List<Term.Position> find(Term term) {
+		List<Term.Position> termPositions = new LinkedList<>();
+		
+		for (int i = 0; i < literals.size(); i++) {
+			List<Term.Position> termPositions2 = literals.get(i).find(term);
+			if (termPositions2 != null) {
+				for (Term.Position termPosition2 : termPositions2) {
+					termPosition2.addFirst(i);
+					termPositions.add(termPosition2);
+				}
+			}
+		}
+		
+		return termPositions;
+	}
+	
+	public Clause replaceOrSubstitute(Term.Position position, Term term) {
+		if (position.isFinal()) {
+			return null;
+		}
+		
+		List<Literal> newLiterals = new LinkedList<>();
+		for (int i = 0; i < literals.size(); i++) {
+			if (i == position.getFirst()) {
+				Literal l = literals.get(i).replaceOrSubstitute(position.pop(), term);
+				if (l == null) {
+					return null;
+				}
+				newLiterals.add(l);
+			} else {
+				Literal l = literals.get(i).replace(position.getUnifier());
+				if (l == null) {
+					return null;
+				}
+				newLiterals.add(l);
+			}
+		}
+		
+		return new Clause(newLiterals);
 	}
 }

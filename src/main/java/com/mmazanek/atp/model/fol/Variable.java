@@ -1,6 +1,7 @@
 package com.mmazanek.atp.model.fol;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,21 +71,39 @@ public class Variable extends Term {
 		if (mapped instanceof Variable) {
 			return other.equals(mapped);
 		}
-		/**
+		return mapped.deduces(other, replaceMap);
+	}
+
+	@Override
+	public Substitution mgu(Term other, Substitution substitution) {
 		if (other instanceof Variable) {
-			if (mapped instanceof Variable) {
-				System.out.println(id+" other: " + ((Variable)other).id + " mapped: " + ((Variable)mapped).id);
+			// Var Var
+			Variable var2 = (Variable) other;
+			if (var2.equals(this)) {
+				return substitution;
 			} else {
-				System.out.println(id+" other: " + ((Variable)other).id);
+				substitution = substitution.apply(this, other);
 			}
 		} else {
-			if (mapped instanceof Variable) {
-				System.out.println(id+" oF mV");
-			} else {
-				System.out.println(id+" oF mF");
+			// Var fnc
+			if (other.collectVariables().contains(this)) {
+				return null;
 			}
+			substitution = substitution.apply(this, other);
 		}
-		**/
-		return mapped.deduces(other, replaceMap);
+		return substitution;
+	}
+
+	@Override
+	public List<Position> find(Term term) {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public Term replaceOrSubstitute(Position position, Term term) {
+		if (position.isFinal()) {
+			return term;
+		}
+		return null;
 	}
 }

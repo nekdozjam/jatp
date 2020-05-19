@@ -1,5 +1,6 @@
 package com.mmazanek.atp.model.fol;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -8,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.mmazanek.atp.model.fol.Term.Position;
+
 public class Literal implements Formula {
 	
 	private boolean negated;
@@ -15,14 +18,14 @@ public class Literal implements Formula {
 	private List<Term> terms;
 	private Set<Variable> variables = null;
 	
-	public static final Literal TRUE = new Literal(PredicateSymbol.TRUE, false, Collections.EMPTY_LIST) {
+	public static final Literal TRUE = new Literal(PredicateSymbol.TRUE, false, Collections.emptyList()) {
 		@Override
 		public Formula pushNegations(boolean negate) {
 			return negate ? FALSE : TRUE;
 		}
 	};
 	
-	public static final Literal FALSE = new Literal(PredicateSymbol.FALSE, false, Collections.EMPTY_LIST) {
+	public static final Literal FALSE = new Literal(PredicateSymbol.FALSE, false, Collections.emptyList()) {
 		@Override
 		public Formula pushNegations(boolean negate) {
 			return negate ? TRUE : FALSE;
@@ -49,7 +52,11 @@ public class Literal implements Formula {
 	public Literal replace(Map<Variable, Term> replaceMap) {
 		List<Term> terms2 = new LinkedList<>();
 		for (Term t : terms) {
-			terms2.add(t.replace(replaceMap));
+			Term term2 = t.replace(replaceMap);
+			if (term2 == null) {
+				System.out.println("literal replace");
+			}
+			terms2.add(term2);
 		}
 		return new Literal(predicate, negated, terms2);
 	}
@@ -78,6 +85,9 @@ public class Literal implements Formula {
 		if (variables == null) {
 			variables = new HashSet<>();
 			for (Term t : terms) {
+				if (t == null) {
+					System.out.println("literal 0");
+				}
 				variables.addAll(t.collectVariables());
 			}
 		}
@@ -88,7 +98,11 @@ public class Literal implements Formula {
 	public Formula rewriteVariables(Map<Variable, Variable> rewriteMap) {
 		List<Term> terms2 = new LinkedList<>();
 		for (Term t : terms) {
-			terms2.add(t.rewriteVariables(rewriteMap));
+			Term t2 = t.rewriteVariables(rewriteMap);
+			if(t2 == null) {
+				System.out.println("literal 54");
+			}
+			terms2.add(t2);
 		}
 		Literal newLiteral = new Literal(predicate, negated, terms2);
 		if (variables != null) {
@@ -115,5 +129,64 @@ public class Literal implements Formula {
 			}
 		}
 		return true;
+	}
+	
+	public Substitution mgu(Literal other) {
+		Substitution s = new Substitution();
+		if (!this.getPredicate().equals(other.getPredicate())) {
+			return null;
+		}
+		Iterator<Term> l2iter = other.getTerms().iterator();
+		for (Term t : this.getTerms()) {
+			Term t2 = l2iter.next();
+			s = t.replace(s).mgu(t2.replace(s), s);
+			if (s == null) {
+				return null;
+			}
+		}
+		return s;
+	}
+	
+	public List<Term.Position> find(Term term) {
+		List<Term.Position> termPositions = new LinkedList<>();
+		
+		for (int i = 0; i < terms.size(); i++) {
+			List<Term.Position> termPositions2 = terms.get(i).find(term);
+			if (termPositions2 != null) {
+				for (Term.Position termPosition2 : termPositions2) {
+					termPosition2.addFirst(i);
+					termPositions.add(termPosition2);
+				}
+			}
+		}
+		
+		return termPositions;
+	}
+	
+
+	public Literal replaceOrSubstitute(Term.Position position, Term term) {
+		if (position.isFinal()) {
+			return null;
+		}
+		
+		List<Term> newTerms = new ArrayList<>(terms.size());
+		for (int i = 0; i < terms.size(); i++) {
+			if (i == position.getFirst()) {
+				Term t = terms.get(i).replaceOrSubstitute(position.pop(), term);
+				if (t == null) {
+					System.out.println("literal 1");
+					return null;
+				}
+				newTerms.add(t);
+			} else {
+				Term t = terms.get(i).replace(position.getUnifier());
+				if (t == null) {
+					System.out.println("literal 2");
+					return null;
+				}
+				newTerms.add(t);
+			}
+		}
+		return new Literal(predicate, negated, newTerms);
 	}
 }

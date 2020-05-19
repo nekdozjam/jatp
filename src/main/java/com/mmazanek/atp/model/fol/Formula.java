@@ -56,6 +56,9 @@ public interface Formula {
 	 */
 	public List<Clause> flatten();
 	
+	//public List<TermPosition> find(Term t);
+	// rewriteTerms(Term toFind, Term rewriteTerm, Clause addedClauses?)
+	
 	public Set<Variable> collectVariables();
 	
 }

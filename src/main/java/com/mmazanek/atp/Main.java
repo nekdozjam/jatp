@@ -22,10 +22,13 @@ public class Main {
 		options.addOption("b", "basedir", true, "directory where problem files are located");
 		options.addOption("i", "includes", true, "directory where included files are located");
 		options.addOption("t", "maxtime", true, "maximum runtime in seconds");
+		options.addOption("v", "verbose", false, "verbose output");
 		options.addOption("printDepth", false, "print loop depth");
 		options.addOption("debug", false, "enable debugging messages");
 		options.addOption("maxClauseSize", true, "maximum clause size to keep");
 		options.addOption("maxClauseVariables", true, "maximum number of variables in kept clauses");
+		options.addOption("selectAge", true, "number of oldest clauses to pick each round");
+		options.addOption("selectSmallest", true, "number of shortest clauses to pick each round");
 		
 		CommandLineParser p = new DefaultParser();
 		CommandLine line = null;
@@ -41,11 +44,18 @@ public class Main {
 		long maxtime = Long.parseLong(line.getOptionValue("maxtime", "60"));
 		ProgramProperties.printLoopDepth = line.hasOption("printDepth");
 		ProgramProperties.debug = line.hasOption("debug");
+		ProgramProperties.verbose = line.hasOption("verbose");
 		if (line.hasOption("maxClauseSize")) {
 			ProgramProperties.maxClauseSize = Integer.parseInt(line.getOptionValue("maxClauseSize"));
 		}
 		if (line.hasOption("maxClauseVariables")) {
 			ProgramProperties.maxClauseVariables = Integer.parseInt(line.getOptionValue("maxClauseVariables"));
+		}
+		if (line.hasOption("selectAge")) {
+			ProgramProperties.selectAge = Integer.parseInt(line.getOptionValue("selectAge"));
+		}
+		if (line.hasOption("selectSmallest")) {
+			ProgramProperties.selectSmallest = Integer.parseInt(line.getOptionValue("selectSmallest"));
 		}
 		
 		System.out.println("# MaxClauseSize: " + ProgramProperties.maxClauseSize);
@@ -68,16 +78,18 @@ public class Main {
 		
 		TptpMarshaller marshaller = new TptpMarshaller(System.out);
 		
-		System.out.println("# Formulae: ");
-		for (FormulaEntry f : kb.getFormulae()) {
-			System.out.print("# ");
-			marshaller.marshallFormula(f);
-		}
-		
-		System.out.println("# Clauses:");
-		for (ClauseEntry c : kb.getClauses()) {
-			System.out.print("# ");
-			marshaller.marshallClause(c);
+		if (ProgramProperties.debug) {
+			System.out.println("# Formulae: ");
+			for (FormulaEntry f : kb.getFormulae()) {
+				System.out.print("# ");
+				marshaller.marshallFormula(f);
+			}
+			
+			System.out.println("# Clauses:");
+			for (ClauseEntry c : kb.getClauses()) {
+				System.out.print("# ");
+				marshaller.marshallClause(c);
+			}
 		}
 		
 		System.out.println("# Solving....");
@@ -86,7 +98,7 @@ public class Main {
 			kb.solve(maxtime);
 		} catch (OutOfMemoryError e) {
 			kb = null;
-			System.gc();
+			// System.gc();
 			System.out.println("# SZS status MemoryOut");
 		}
 		
