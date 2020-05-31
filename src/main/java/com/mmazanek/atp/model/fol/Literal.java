@@ -18,6 +18,12 @@ public class Literal implements Formula {
 	private List<Term> terms;
 	private Set<Variable> variables = null;
 	
+	public static long literalsMgu = 0;
+	public static long literalsFind = 0;
+	public static long literalsDeduces = 0;
+	public static long literalsReplaceOrSubstitute = 0;
+	
+	
 	public static final Literal TRUE = new Literal(PredicateSymbol.TRUE, false, Collections.emptyList()) {
 		@Override
 		public Formula pushNegations(boolean negate) {
@@ -53,9 +59,6 @@ public class Literal implements Formula {
 		List<Term> terms2 = new LinkedList<>();
 		for (Term t : terms) {
 			Term term2 = t.replace(replaceMap);
-			if (term2 == null) {
-				System.out.println("literal replace");
-			}
 			terms2.add(term2);
 		}
 		return new Literal(predicate, negated, terms2);
@@ -85,9 +88,6 @@ public class Literal implements Formula {
 		if (variables == null) {
 			variables = new HashSet<>();
 			for (Term t : terms) {
-				if (t == null) {
-					System.out.println("literal 0");
-				}
 				variables.addAll(t.collectVariables());
 			}
 		}
@@ -99,9 +99,6 @@ public class Literal implements Formula {
 		List<Term> terms2 = new LinkedList<>();
 		for (Term t : terms) {
 			Term t2 = t.rewriteVariables(rewriteMap);
-			if(t2 == null) {
-				System.out.println("literal 54");
-			}
 			terms2.add(t2);
 		}
 		Literal newLiteral = new Literal(predicate, negated, terms2);
@@ -116,6 +113,7 @@ public class Literal implements Formula {
 	}
 	
 	public boolean deduces(Literal literal, Map<Variable, Term> replaceMap) {
+		literalsDeduces++;
 		if (this.negated != literal.negated) {
 			return false;
 		}
@@ -132,6 +130,7 @@ public class Literal implements Formula {
 	}
 	
 	public Substitution mgu(Literal other) {
+		literalsMgu++;
 		Substitution s = new Substitution();
 		if (!this.getPredicate().equals(other.getPredicate())) {
 			return null;
@@ -148,6 +147,7 @@ public class Literal implements Formula {
 	}
 	
 	public List<Term.Position> find(Term term) {
+		literalsFind++;
 		List<Term.Position> termPositions = new LinkedList<>();
 		
 		for (int i = 0; i < terms.size(); i++) {
@@ -165,6 +165,7 @@ public class Literal implements Formula {
 	
 
 	public Literal replaceOrSubstitute(Term.Position position, Term term) {
+		literalsReplaceOrSubstitute++;
 		if (position.isFinal()) {
 			return null;
 		}
@@ -174,14 +175,12 @@ public class Literal implements Formula {
 			if (i == position.getFirst()) {
 				Term t = terms.get(i).replaceOrSubstitute(position.pop(), term);
 				if (t == null) {
-					System.out.println("literal 1");
 					return null;
 				}
 				newTerms.add(t);
 			} else {
 				Term t = terms.get(i).replace(position.getUnifier());
 				if (t == null) {
-					System.out.println("literal 2");
 					return null;
 				}
 				newTerms.add(t);

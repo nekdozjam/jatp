@@ -30,7 +30,7 @@ public class TptpMarshaller implements LogicMarshaller {
 		this.writer = writer;
 	}
 	
-	private void doMarshallFormula(Formula formula) throws IOException {
+	public void doMarshallFormula(Formula formula) throws IOException {
 		if (formula instanceof Literal) {
 			Literal af = (Literal) formula;
 			PredicateSymbol s = af.getPredicate();
@@ -107,7 +107,7 @@ public class TptpMarshaller implements LogicMarshaller {
 		}
 	}
 	
-	private void marshallTerm(Term term) throws IOException {
+	public void marshallTerm(Term term) throws IOException {
 		if (term instanceof Variable) {
 			writer.print(((Variable)term).getName());
 		} else if (term instanceof FunctionTerm) {

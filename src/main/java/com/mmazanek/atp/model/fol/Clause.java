@@ -3,7 +3,6 @@ package com.mmazanek.atp.model.fol;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -15,8 +14,14 @@ public class Clause implements Formula {
 	
 	private List<Literal> literals;
 	private Set<Variable> variables = null;
+
+	public static long clausesGenerated = 0;
+	public static long clausesFind = 0;
+	public static long clausesDeduces = 0;
+	public static long clausesReplaceOrSubstitute = 0;
 	
 	public Clause(List<Literal> literals) {
+		Clause.clausesGenerated++;
 		//sort!
 		this.literals = literals;
 		literals.sort((l1, l2) -> l1.getPredicate().getId() - l2.getPredicate().getId());
@@ -26,11 +31,6 @@ public class Clause implements Formula {
 		return literals;
 	}
 	
-	/**
-	 * 
-	 * @param other
-	 * @return
-	 */
 	public Clause join(Clause other) {
 		List<Literal> literals2 = new LinkedList<>();
 		literals2.addAll(literals);
@@ -100,6 +100,7 @@ public class Clause implements Formula {
 	}
 	
 	public boolean deduces(Clause clause) {
+		Clause.clausesDeduces++;
 		//this has variables - substitution can only happen on this
 		List<Literal> otherLiterals = clause.getLiterals();
 		
@@ -114,7 +115,7 @@ public class Clause implements Formula {
 			if (literal.isNegated() != other.isNegated()) {
 				return false;
 			}
-			if (! literal.getPredicate().equals(other.getPredicate())) {
+			if (!literal.getPredicate().equals(other.getPredicate())) {
 				return false;
 			}
 		}
@@ -131,6 +132,7 @@ public class Clause implements Formula {
 	}
 	
 	public List<Term.Position> find(Term term) {
+		Clause.clausesFind++;
 		List<Term.Position> termPositions = new LinkedList<>();
 		
 		for (int i = 0; i < literals.size(); i++) {
@@ -147,6 +149,7 @@ public class Clause implements Formula {
 	}
 	
 	public Clause replaceOrSubstitute(Term.Position position, Term term) {
+		Clause.clausesReplaceOrSubstitute++;
 		if (position.isFinal()) {
 			return null;
 		}

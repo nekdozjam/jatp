@@ -33,9 +33,9 @@ public class RewriteRule {
 	public List<Clause> apply(Clause clause) {
 		List<Clause> res = new LinkedList<>();
 		List<Term.Position> positions = clause.find(from);
-		if (positions != null && positions.size() > 0) {
+		if (positions != null) {
 			for (Term.Position position : positions) {
-				Clause newClause = clause.replaceOrSubstitute(position, to);
+				Clause newClause = clause.replaceOrSubstitute(position, to.replace(position.getUnifier()));
 				if (newClause != null) {
 					for (Literal l : addedLiterals) {
 						l = l.replace(position.getUnifier());

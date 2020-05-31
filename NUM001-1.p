@@ -34,15 +34,5 @@ cnf(add_substitution2,axiom,
     | ~ equalish(C,add(D,A))
     | equalish(C,add(D,B)) )).
 
-cnf(subtract_substitution1,axiom,
-    ( ~ equalish(A,B)
-    | ~ equalish(C,subtract(A,D))
-    | equalish(C,subtract(B,D)) )).
-
-cnf(subtract_substitution2,axiom,
-    ( ~ equalish(A,B)
-    | ~ equalish(C,subtract(D,A))
-    | equalish(C,subtract(D,B)) )).
-   
 cnf(prove_equation,negated_conjecture,
     ( ~ equalish(add(add(a,b),c),add(a,add(b,c))) )).

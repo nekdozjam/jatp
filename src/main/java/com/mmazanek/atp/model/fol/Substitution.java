@@ -16,6 +16,19 @@ public class Substitution extends HashMap<Variable, Term> {
 
 	 */
 	
+	/*
+	 
+	 this [               ]
+	 	X3->add(sub(A, B), C)
+	 
+	 	X1->A
+	 	
+	 	X2->C
+	 	
+	 	C->B -- update first entry to X3->add(sub(A,B),B)
+	 
+	 */
+	
 	public Substitution apply(Variable variable, Term term) {
 		replaceAll((ignorekey, term1) -> term1.replace(Collections.singletonMap(variable, term)));
 		if (put(variable, term) != null) {
@@ -27,7 +40,7 @@ public class Substitution extends HashMap<Variable, Term> {
 	public Substitution apply(Map<Variable, Term> replaceMap) {
 		replaceAll((ignorekey, term1) -> term1.replace(replaceMap));
 		for (Map.Entry<Variable, Term> entry : replaceMap.entrySet()) {
-			if (put(entry.getKey(), entry.getValue()) == null) {
+			if (put(entry.getKey(), entry.getValue()) != null) {
 				return null;
 			}
 		}

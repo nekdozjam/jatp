@@ -62,7 +62,7 @@ public class Variable extends Term {
 		}
 		Term mapped = replaceMap.get(this);
 		if (mapped == null) {
-			if (other.collectVariables().contains(this)) {
+			if (other.collectVariables().contains(this)) {///wtf
 				return false;
 			}
 			replaceMap.put(this, other);

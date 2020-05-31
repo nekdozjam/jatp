@@ -97,7 +97,7 @@ public class FunctionTerm extends Term {
 			if (this.collectVariables().contains(var2)) {
 				return null;
 			}
-			substitution.apply(var2, this);
+			substitution = substitution.apply(var2, this);
 		} else {
 			// fnc fnc
 			Substitution localSubstitution = new Substitution();
@@ -112,7 +112,7 @@ public class FunctionTerm extends Term {
 					return null;
 				}
 			}
-			substitution.apply(localSubstitution);
+			substitution = substitution.apply(localSubstitution);
 		}
 		return substitution;
 	}
@@ -131,7 +131,6 @@ public class FunctionTerm extends Term {
 		}
 		
 		if (localSubstitution != null) {
-			System.out.println("found " + term.toString() + " in " + toString());
 			positions.add(new Position(localSubstitution));
 		}		
 		return positions;
