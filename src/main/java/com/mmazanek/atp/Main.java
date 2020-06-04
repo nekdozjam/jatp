@@ -5,6 +5,7 @@ import java.io.File;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -41,10 +42,12 @@ public class Main {
 		
 		CommandLineParser p = new DefaultParser();
 		CommandLine line = null;
+		HelpFormatter formatter = new HelpFormatter();
 		try {
 			line = p.parse(options, args);
 		} catch (ParseException e) {
-			System.out.println("# SZS status UsageError");
+			formatter.printHelp("arguments", options);
+			System.out.println("# SZS status UsageError wrong arguments");
 			return;
 		}
 		
@@ -73,10 +76,15 @@ public class Main {
 		
 		
 		String[] leftover = line.getArgs();
-		if (leftover.length != 1) {
-			//TODO: SZS Error wrong arguments
+		if (leftover.length < 1) {
 			System.out.println("# SZS status UsageError");
 			System.out.println("# No input file specified.");
+			formatter.printHelp("arguments", options);
+			return;
+		} else if (leftover.length > 1) {
+			System.out.println("# SZS status UsageError");
+			System.out.println("# Mutiple input files specified.");
+			formatter.printHelp("arguments", options);
 			return;
 		}
 		String filename = leftover[0];

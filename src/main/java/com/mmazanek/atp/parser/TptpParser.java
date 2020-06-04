@@ -51,6 +51,11 @@ public class TptpParser implements LogicParser {
 		}
 	}
 	
+	private void shutdown() {
+		System.out.println("Wrong file format");
+		System.exit(1);
+	}
+	
 	@Override
 	public KnowledgeBase load() {
 		debug("KB.load() start");
@@ -58,8 +63,7 @@ public class TptpParser implements LogicParser {
 			KnowledgeBase.Builder kb = KnowledgeBase.builder();
 			return doLoad(kb, problemFile).build();
 		} catch (IOException e) {
-			System.out.println("SZS Error: asdf");
-			e.printStackTrace();
+			shutdown();
 			return null;
 		}
 	}
@@ -116,6 +120,7 @@ public class TptpParser implements LogicParser {
 				kb.addClauseEntry(new ClauseEntry(name, getType(type), clause, variables, new FileLoad(file.getAbsolutePath())));
 			} else {
 				System.out.println("Wrong input format - expected cnf or fof");
+				shutdown();
 				return null;
 				//TODO: SZS Error wrong format
 			}
@@ -169,12 +174,12 @@ public class TptpParser implements LogicParser {
 			do {
 				String name = reader.next();
 				if (!Character.isUpperCase(name.charAt(0))) {
-					//TODO: error
 					System.err.println(name + " not a variable");
+					shutdown();
 				}
 				if (scopedVariables.containsKey(name)) {
 					System.err.println(name + " already scoped");
-					//TODO: SZS Error
+					shutdown();
 				}
 				Variable v = new Variable(name, kb.generateVarId());
 				fvariables.add(v);
@@ -236,8 +241,8 @@ public class TptpParser implements LogicParser {
 			
 			Variable variable = scopedVariables.get(token);
 			if (variable == null) {
-				//TODO: SZS Variable not quantified
 				System.err.println("Variable not quantified");
+				shutdown();
 			}
 			terms.add(variable);
 			
@@ -256,7 +261,9 @@ public class TptpParser implements LogicParser {
 			reader.skipOne(")");
 			return f;
 		} else {
-			throw new RuntimeException("Wrong format!");
+			System.err.println("Wrong format!");
+			shutdown();
+			return null;
 		}
 	}
 	
@@ -267,7 +274,6 @@ public class TptpParser implements LogicParser {
 		Formula[] formulas = new Formula[2];
 		formulas[0] = first;
 		Formula res = null;
-		//TODO: more connectives, precedence
 		if (reader.trySkipOne("&")) {
 			formulas[1] = parseFormula(reader, kb, variables, scopedVariables);
 			res = new LogicalFormula(Connective.AND, formulas);
@@ -299,8 +305,8 @@ public class TptpParser implements LogicParser {
 			if (scopedVariables != null) { // fof - need to take care of scope
 				variable = scopedVariables.get(name);
 				if (variable == null) {
-					debug("Variable " + name + " not under any scope!");
-					//TODO: SZS Error
+					System.err.println("Variable " + name + " not under any scope!");
+					shutdown();
 				}
 			} else { // cnf - everything with implicitely universaly quantified
 				for (Variable v : variables) {
@@ -379,7 +385,7 @@ public class TptpParser implements LogicParser {
 				Term t = loadTerm(reader, kb, variables, null);
 				terms.add(t);
 			} while (reader.trySkipOne(","));
-			reader.skipOne(")"); //TODO: equals!!
+			reader.skipOne(")");
 			
 			if (reader.trySkipOne("!=")) {
 				Term other = loadTerm(reader, kb, variables, null);
