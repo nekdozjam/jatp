@@ -26,10 +26,6 @@ mvn clean install
 
 Application jar will be generated in the `target` folder.
 
-```
-until finished
-```
-
 
 ## Running the application
 
