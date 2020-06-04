@@ -8,6 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Representation of a function term
+ * 
+ * @author Martin Mazanek
+ */
 public class FunctionTerm extends Term {
 	
 	private FunctionSymbol symbol;

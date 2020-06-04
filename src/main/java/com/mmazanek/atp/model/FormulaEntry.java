@@ -1,12 +1,16 @@
 package com.mmazanek.atp.model;
 
-import java.util.List;
 import java.util.Set;
 
 import com.mmazanek.atp.model.fol.Formula;
 import com.mmazanek.atp.model.fol.Variable;
 import com.mmazanek.atp.model.inference.Inference;
 
+/**
+ * KnowledgeEntry wrapper for a Formula
+ * 
+ * @author Martin Mazanek
+ */
 public class FormulaEntry implements KnowledgeEntry {
 	
 	private String name;
@@ -39,6 +43,10 @@ public class FormulaEntry implements KnowledgeEntry {
 		return type;
 	}
 	
+	/**
+	 * Delegate function for collecting variables of wrapped Formula
+	 * @return set of variables of wrapped formula
+	 */
 	public Set<Variable> getVariables() {
 		if (variables == null) {
 			variables = formula.collectVariables();
@@ -46,6 +54,10 @@ public class FormulaEntry implements KnowledgeEntry {
 		return variables;
 	}
 
+	/**
+	 * Get the wrapped formula
+	 * @return wrapped formula
+	 */
 	public Formula getFormula() {
 		return formula;
 	}

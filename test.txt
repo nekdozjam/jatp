@@ -1,6 +1,0 @@
-cnf(a,axiom,
-    ( equalish(X,X) )).
-
-cnf(c,conjecture,
-    ( equalish(a,X) )).
-    

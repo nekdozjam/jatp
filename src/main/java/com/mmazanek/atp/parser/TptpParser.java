@@ -30,6 +30,11 @@ import com.mmazanek.atp.model.fol.Variable;
 import com.mmazanek.atp.model.inference.FileLoad;
 import com.mmazanek.atp.model.fol.QuantifierFormula.Quantifier;
 
+/**
+ * Parser for the TPTP file format.
+ * 
+ * @author Martin Mazanek
+ */
 public class TptpParser implements LogicParser {
 	
 	private File problemFile;

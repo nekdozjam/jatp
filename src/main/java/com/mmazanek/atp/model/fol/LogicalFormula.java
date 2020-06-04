@@ -6,10 +6,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-//connective
-//1 or 2 formulas
+/**
+ * Representation of a formula with logical connective
+ * 
+ * @author Martin Mazanek
+ */
 public class LogicalFormula implements Formula {
 	
+	/**
+	 * Connectives
+	 */
 	public static enum Connective {
 		NOT(1, "~"),
 		OR(2, "|"),

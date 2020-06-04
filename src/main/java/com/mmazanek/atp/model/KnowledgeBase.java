@@ -33,9 +33,9 @@ import com.mmazanek.atp.model.inference.UnitDeletion;
 import com.mmazanek.atp.parser.TptpMarshaller;
 
 /**
+ * Class for storing and reasoning on formulas in first order logic
  * 
  * @author Martin Mazanek
- *
  */
 public class KnowledgeBase {
 	private Map<String, Symbol> symbolMap = new HashMap<>();
@@ -72,10 +72,18 @@ public class KnowledgeBase {
 		nextVarId = builder.nextVarId;
 	}
 	
+	/**
+	 * get list of loaded formulae
+	 * @return
+	 */
 	public List<FormulaEntry> getFormulae() {
 		return this.formulae;
 	}
 	
+	/**
+	 * Get list of loaded clauses
+	 * @return
+	 */
 	public List<ClauseEntry> getClauses() {
 		return this.clauses;
 	}
@@ -160,8 +168,6 @@ public class KnowledgeBase {
 		}
 		
 		// Unit deletion
-		//TODO: change to iterator
-		//TODO: delete only non-substituted
 		for (ClauseEntry e : units) {
 			Literal unitLiteral = e.getClause().getLiterals().get(0);
 			List<Literal> newLiterals = new ArrayList<>(entry.getClause().getLiterals().size());
@@ -205,35 +211,10 @@ public class KnowledgeBase {
 				System.out.print("# Adding unit: ");
 				marshaller.marshallClause(entry);
 			}
-			
-			/*
-			// TODO: back unit deletion, back delete noninformative clauses
-			for (int i = 0; i < active.size(); i++) {
-				Literal unitLiteral = entry.getClause().getLiterals().get(0);
-				
-				ClauseEntry backClauseEntry = active.get(i);
-				ClauseEntry backDeletedEntry = null;
-				
-				List<Literal> newLiterals = new ArrayList<>(backClauseEntry.getClause().getLiterals().size());
-				for (Literal currentLiteral : backClauseEntry.getClause().getLiterals()) {
-					if (unitLiteral.isNegated() == currentLiteral.isNegated() || !unitLiteral.deduces(currentLiteral, new HashMap<>())) {
-						newLiterals.add(currentLiteral);
-					}
-				}
-				if (newLiterals.size() != entry.getClause().getLiterals().size()) {
-					if (ProgramProperties.debug) {
-						System.out.println("# Deleting");
-					}
-					backDeletedEntry = new ClauseEntry(generateEntryName(), entry.getType(), new Clause(newLiterals), null, new UnitDeletion(backClauseEntry, entry));
-				}
-				if (backDeletedEntry != null) {
-					active.set(i, backDeletedEntry);
-				}
-			}
-			*/
 		}
 	}
 	
+	// prints various debug information, usually called at the end of the search
 	private void dumpActive() {
 		if (ProgramProperties.verbose) {
 			System.out.println("# Active size: " + active.size());
@@ -296,6 +277,15 @@ public class KnowledgeBase {
 	//  - factoring, eresolution
 	//  - check for contradiction
 	//  - repeat
+	/**
+	 * Try to find a refutation of loaded negated conjecture.
+	 * 
+	 * This method contains the main loop of the solving algorithm.
+	 * 
+	 * 
+	 * 
+	 * @param maxtime maximum search time in ms
+	 */
 	public void solve(long maxtime) {
 		
 		startTime = System.currentTimeMillis();
@@ -465,6 +455,7 @@ public class KnowledgeBase {
 	//                                                  //
 	//////////////////////////////////////////////////////
 
+	//
 	private List<ClauseEntry> paramodulate(ClauseEntry currentEntry, ClauseEntry secondEntry, List<RewriteRule> newRewriteRules) {
 		List<ClauseEntry> res = new LinkedList<>();
 		
@@ -478,7 +469,6 @@ public class KnowledgeBase {
 			}
 		}
 		
-		
 		for (RewriteRule r : newRewriteRules) {
 			List<Clause> generated = r.apply(secondEntry.getClause());
 			
@@ -487,7 +477,6 @@ public class KnowledgeBase {
 				res.add(new ClauseEntry(generateEntryName(), Type.PLAIN, c, null, new Paramodulation(currentEntry, secondEntry)));
 			}
 		}
-		
 		
 		return res;
 	}
@@ -521,6 +510,7 @@ public class KnowledgeBase {
 		return res;
 	}
 	
+	// wraps given formula in negation
 	private FormulaEntry assumeNegation(FormulaEntry e) {
 		return new FormulaEntry(generateEntryName(), Type.NEGATED_CONJECTURE, new LogicalFormula(Connective.NOT, new Formula[] {e.getFormula()}), e.getVariables(), new AssumeNegation(e)); //TODO: recreate variables
 	}
@@ -599,6 +589,7 @@ public class KnowledgeBase {
 		return newEntries;
 	}
 	
+	
 	private FunctionSymbol generateSkolemFunctionSymbol(int arity) {
 		String name = null;
 		do {
@@ -611,6 +602,13 @@ public class KnowledgeBase {
 		return s;
 	}
 	
+	/**
+	 * Clausify single formula
+	 * 
+	 * This function clausifies single FormulaEntry and adds the result to waiting
+	 * 
+	 * @param formulaEntry FormulaEntry to be clausified
+	 */
 	private void clausify(FormulaEntry formulaEntry) {
 		// Rename variables
 		int varid = 1;
@@ -646,6 +644,11 @@ public class KnowledgeBase {
 		}
 	}
 	
+	/**
+	 * Clausify all formulas
+	 * 
+	 * This function clausifies all formulas in formulae and adds the result to waiting. This also takes conjectures from clauses, negates them and adds them to waiting aswell.
+	 */
 	public void clausifyAll() {
 		for (ClauseEntry c : clauses) {
 			if (c.getType() == Type.CONJECTURE) {
@@ -661,8 +664,10 @@ public class KnowledgeBase {
 			}
 		}
 	}
-
-	
+ 	
+	/**
+	 * Builder class for KnowledgeBase
+	 */
 	public static class Builder {
 		
 		private HashMap<String, Symbol> symbolMap = new HashMap<>();
@@ -681,24 +686,49 @@ public class KnowledgeBase {
 			clauses.add(entry);
 		}
 
+		/**
+		 * Generate unique variable id
+		 * 
+		 * @return unique variable id, starting with 1 and incrementing
+		 */
 		public int generateVarId() {
 			return nextVarId++;
 		}
 		
+
+		/**
+		 * Generate unique symbol id
+		 * 
+		 * @return unique symbol id, starting with 1 and incrementing
+		 */
 		private int generateSymbolId() {
 			return nextSymbolId++;
 		}
 		
+		/**
+		 * Get Symbol associated with given name.
+		 * 
+		 * @param name name of the symbol
+		 * @return registered symbol or {@code null}
+		 */
 		public Symbol getSymbol(String name) {
 			return symbolMap.get(name);
 		}
 		
+		/**
+		 * Add a predicate symbol with given name and arity to the KnowledgeBase
+		 * 
+		 * 
+		 * @param name name of the symbol
+		 * @param arity arity of the sybmol
+		 * @return name assigned PredicateSymbol or {@code null} if name is assigned to a FunctionSymbol or arity isn't matching
+		 */
 		public PredicateSymbol addPredicateSymbol(String name, int arity) {
 			if (symbolMap.containsKey(name)) {
 				Symbol s = symbolMap.get(name);
 				if (s instanceof PredicateSymbol) {
 					if (arity != s.getArity()) {
-						System.err.println("mismatchin arity of " + name);
+						System.err.println("mismatching arity of " + name);
 						return null;
 					}
 					return (PredicateSymbol) s;
@@ -713,6 +743,14 @@ public class KnowledgeBase {
 			}
 		}
 		
+		/**
+		 * Add a function symbol with given name and arity to the KnowledgeBase
+		 * 
+		 * 
+		 * @param name name of the symbol
+		 * @param arity arity of the sybmol
+		 * @return name assigned FunctionSymbol or {@code null} if name is assigned to a PredicateSymbol or arity isn't matching
+		 */
 		public FunctionSymbol addFunctionSymbol(String name, int arity) {
 			if (symbolMap.containsKey(name)) {
 				Symbol s = symbolMap.get(name);

@@ -1,5 +1,10 @@
 package com.mmazanek.atp.model.fol;
 
+/**
+ * Representation of a generic symbol
+ * 
+ * @author Martin Mazanek
+ */
 public abstract class Symbol {
 
 	private final String name;

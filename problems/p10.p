@@ -1,10 +1,30 @@
-%fof(q1, axiom, (! [X]: (nul != suc(X)))).
-%fof(q2, axiom, (! [X]: ((X != nul) => ( ? [Y] : (X = suc(Y)))) )).
-%fof(q3, axiom, (! [X,Y]: ((suc(X) = suc(Y)) => (X = Y)) )).
-%fof(q4, axiom, (! [X]: (add(X, nul) = nul) )).
-%fof(q5, axiom, (! [X,Y]: ( add(X, suc(Y)) = suc(add(X, Y))  ))).
+cnf(commutativity_of_addition,axiom,
+    ( add(A,B) = add(B,A) )).
 
-fof(a0, axiom, (one = suc(nul))).
-fof(a1, axiom, (a = one)).
+cnf(associativity_of_addition,axiom,
+    ( add(A,add(B,C)) = add(add(A,B),C) )).
 
-fof(con, conjecture, (suc(a) = suc(suc(nul)) )).
+cnf(addition_inverts_subtraction1,axiom,
+    ( subtract(add(A,B),B) = A )).
+
+cnf(addition_inverts_subtraction2,axiom,
+    ( A = subtract(add(A,B),B)  )).
+
+cnf(commutativity1,axiom,
+    ( add(subtract(A,B),C) = subtract(add(A,C),B) )).
+
+cnf(commutativity2,axiom,
+    ( subtract(add(A,B),C) = add(subtract(A,C),B) )).
+
+cnf(add_substitution1,axiom,
+    ( A != B
+    | C != add(A,D)
+    | C = add(B,D) )).
+
+cnf(add_substitution2,axiom,
+    ( A != B
+    | C != add(D,A)
+    | C != add(D,B) )).
+
+cnf(prove_equation,negated_conjecture,
+    ( add(add(a,b),c) != add(a,add(b,c)) )).

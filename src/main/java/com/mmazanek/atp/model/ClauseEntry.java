@@ -1,18 +1,23 @@
 package com.mmazanek.atp.model;
 
-import java.util.List;
 import java.util.Set;
 
 import com.mmazanek.atp.model.fol.Clause;
 import com.mmazanek.atp.model.fol.Variable;
 import com.mmazanek.atp.model.inference.Inference;
 
+/**
+ * KnowledgeEntry wrapper for a Clause
+ * 
+ * @author Martin Mazanek
+ */
 public class ClauseEntry implements KnowledgeEntry {
 	private String name;
 	private Type type;
 	private Clause clause;
 	private Inference ancestors;
 	private Set<Variable> variables;
+	// unused
 	private boolean active = true;
 	
 	public ClauseEntry(String name, Type type, Clause clause, Set<Variable> variables, Inference ancestors) {
@@ -38,6 +43,10 @@ public class ClauseEntry implements KnowledgeEntry {
 		return type;
 	}
 
+	/**
+	 * Delegate function for collecting variables of wrapped Formula
+	 * @return set of variables of wrapped formula
+	 */
 	public Set<Variable> getVariables() {
 		if (variables == null) {
 			variables = clause.collectVariables();
@@ -45,6 +54,10 @@ public class ClauseEntry implements KnowledgeEntry {
 		return variables;
 	}
 	
+	/**
+	 * Get the wrapped clause
+	 * @return wrapped clause
+	 */
 	public Clause getClause() {
 		return clause;
 	}

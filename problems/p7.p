@@ -1,3 +1,7 @@
-cnf(c1, axiom, (~equalish(X3, subtract(add(X1, X2), X2)) | equalish(X3, X1)) ).
-cnf(c2, axiom,  (equalish(add(subtract(A, B), C), subtract(add(A, C), B))) ).
-cnf(c3, negated_conjecture, (~equalish(add(subtract(X1, X2), X3), X1)) ).
+fof(q1, axiom, (! [X]: (nul != suc(X)))).
+fof(q2, axiom, (! [X]: ((X != nul) => ( ? [Y] : (X = suc(Y)))) )).
+fof(q3, axiom, (! [X,Y]: ((suc(X) = suc(Y)) => (X = Y)) )).
+fof(q4, axiom, (! [X]: (add(X, nul) = X) )).
+fof(q5, axiom, (! [X,Y]: ( add(X, suc(Y)) = suc(add(X, Y))  ))).
+
+fof(con, conjecture, (add(suc(nul), suc(nul)) = suc(suc(nul)) )).

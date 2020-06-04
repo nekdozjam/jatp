@@ -1,15 +1,16 @@
 package com.mmazanek.atp.model.fol;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-//quantifier
-//variable
-//delegate formula
+/**
+ * Representation of a formula with quantifier
+ * 
+ * @author Martin Mazanek
+ */
 public class QuantifierFormula implements Formula {
 	public static enum Quantifier {
 		FORALL,

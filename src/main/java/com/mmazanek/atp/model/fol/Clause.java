@@ -10,6 +10,11 @@ import java.util.Set;
 
 import com.mmazanek.atp.model.fol.LogicalFormula.Connective;
 
+/**
+ * Representation of a clause.
+ * 
+ * @author Martin Mazanek
+ */
 public class Clause implements Formula {
 	
 	private List<Literal> literals;
@@ -31,6 +36,12 @@ public class Clause implements Formula {
 		return literals;
 	}
 	
+	/**
+	 * Create new clause by joining with other
+	 * 
+	 * @param other
+	 * @return new Clause containing literals from this and other clause
+	 */
 	public Clause join(Clause other) {
 		List<Literal> literals2 = new LinkedList<>();
 		literals2.addAll(literals);
@@ -67,6 +78,10 @@ public class Clause implements Formula {
 		throw new RuntimeException("Clause flattening not implemented");
 	}
 	
+	/**
+	 * Whenever this clause has no literals
+	 * @return true this has no literals
+	 */
 	public boolean isEmpty() {
 		return literals.isEmpty();
 	}
@@ -99,10 +114,16 @@ public class Clause implements Formula {
 		return c;
 	}
 	
-	public boolean deduces(Clause clause) {
+	/**
+	 * Compute if other clause can be created by substitution of this clause
+	 * 
+	 * @param other
+	 * @return whenever other clauses can be created by substitution of this
+	 */
+	public boolean deduces(Clause other) {
 		Clause.clausesDeduces++;
 		//this has variables - substitution can only happen on this
-		List<Literal> otherLiterals = clause.getLiterals();
+		List<Literal> otherLiterals = other.getLiterals();
 		
 		if (otherLiterals.size() != literals.size()) {
 			return false;
@@ -111,11 +132,11 @@ public class Clause implements Formula {
 		//fast check first
 		Iterator<Literal> otherLiteralsIterator = otherLiterals.iterator();
 		for (Literal literal : literals) {
-			Literal other = otherLiteralsIterator.next();
-			if (literal.isNegated() != other.isNegated()) {
+			Literal otherLiteral = otherLiteralsIterator.next();
+			if (literal.isNegated() != otherLiteral.isNegated()) {
 				return false;
 			}
-			if (!literal.getPredicate().equals(other.getPredicate())) {
+			if (!literal.getPredicate().equals(otherLiteral.getPredicate())) {
 				return false;
 			}
 		}
@@ -131,6 +152,12 @@ public class Clause implements Formula {
 		return true;
 	}
 	
+	/**
+	 * Find all possible positions of a given term
+	 * 
+	 * @param term term to find
+	 * @return all positions of term
+	 */
 	public List<Term.Position> find(Term term) {
 		Clause.clausesFind++;
 		List<Term.Position> termPositions = new LinkedList<>();
@@ -148,6 +175,13 @@ public class Clause implements Formula {
 		return termPositions;
 	}
 	
+	/**
+	 * Replace term on position position by the term term and substitute everything else
+	 * 
+	 * @param position
+	 * @param term
+	 * @return replaced clause
+	 */
 	public Clause replaceOrSubstitute(Term.Position position, Term term) {
 		Clause.clausesReplaceOrSubstitute++;
 		if (position.isFinal()) {

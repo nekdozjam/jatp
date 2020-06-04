@@ -1,5 +1,10 @@
 package com.mmazanek.atp;
 
+/**
+ * Static class for storing various program properties
+ * 
+ * @author Martin Mazanek
+ */
 public class ProgramProperties {
 	public static boolean debug = false;
 	public static boolean printLoopDepth = false;

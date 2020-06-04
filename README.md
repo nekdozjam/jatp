@@ -16,7 +16,6 @@ Bachelors Thesis project
 
 ### Installation
 
-TODO: git download/clone
 At first make sure you have installed all the prerequisites.
 
 Open root folder in terminal and run
@@ -31,10 +30,6 @@ Application jar will be generated in the `target` folder.
 until finished
 ```
 
-### Build using GraalVM
-
-* TBD
-
 
 ## Running the application
 
@@ -46,33 +41,90 @@ java -jar target/jatp-1.0-SNAPSHOT.jar problemfile.p
 
 ### Configuration
 
-* TBD
 
 To set parent directory for included files
 
 ```
--i includefiles
---includes includefiles
+-includes includefiles
 ```
 
 To set parent directory for problem files
 
 ```
--b problemfiles
---basedir problemfiles
+-basedir problemfiles
 ```
 
 To set maximum solving time
 
 ```
--t 150
---time 150
+-maxtime 150
+```
+
+To enable verbose output
+
+```
+-verbose
+```
+
+To enable profiling output
+
+```
+-profile
+```
+
+To enable debug output
+
+```
+-debug
+```
+Note: debug option outputs a lot of data and heavily affects the performance
+
+To dump active list at the end of execution:
+
+```
+-dumpActive
+```
+
+To dump units list at the end of execution:
+
+```
+-dumpUnits
+```
+
+To dump rewrite rules at the end of execution:
+
+```
+-dumpRewrites
+```
+
+To set the number of oldest clauses to be selected to N:
+
+```
+-selectAge N
+```
+
+To set the number of smallest clauses to be selected to N:
+
+```
+-selectSmallest N
+```
+
+To limit the size of newly generated clauses to N:
+
+```
+-maxClauseSize N
+```
+
+To limit the number of variables of newly generated clauses to N:
+
+```
+-maxClauseVariables N
 ```
 
 Example usage:
 
 ```
-java -jar target/jatp-1.0-SNAPSHOT.jar -t 150 -i includes testi.txt
+java -jar target/jatp-1.0-Final.jar -maxtime 30 -basedir problems p1.p
 ```
 
 ## Authors

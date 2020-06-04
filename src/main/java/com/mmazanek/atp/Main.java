@@ -14,6 +14,11 @@ import com.mmazanek.atp.model.KnowledgeBase;
 import com.mmazanek.atp.parser.TptpMarshaller;
 import com.mmazanek.atp.parser.TptpParser;
 
+/**
+ * Main class of the JATP
+ * 
+ * @author Martin Mazanek
+ */
 public class Main {
 	
 	public static void main(String[] args) {

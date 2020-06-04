@@ -8,9 +8,9 @@ public interface Formula {
 	/**
 	 * Replace variables by terms.
 	 * 
-	 * @param variable
+	 * @param variable to be replaced
 	 * @param term
-	 * @return
+	 * @return new replaced formula
 	 */
 	public abstract Formula replace(Map<Variable, Term> replaceMap);
 	
@@ -18,7 +18,7 @@ public interface Formula {
 	 * Rewrite variables.
 	 * 
 	 * @param rewriteMap
-	 * @return
+	 * @return new rewritten formula
 	 */
 	public Formula rewriteVariables(Map<Variable, Variable> rewriteMap);
 	
@@ -56,9 +56,11 @@ public interface Formula {
 	 */
 	public List<Clause> flatten();
 	
-	//public List<TermPosition> find(Term t);
-	// rewriteTerms(Term toFind, Term rewriteTerm, Clause addedClauses?)
-	
+	/**
+	 * Collect all Variables of this formula and its subformulas.
+	 * 
+	 * @return Set of collected variables
+	 */
 	public Set<Variable> collectVariables();
 	
 }

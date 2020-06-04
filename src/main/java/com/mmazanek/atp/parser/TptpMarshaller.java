@@ -22,6 +22,11 @@ import com.mmazanek.atp.model.inference.FileLoad;
 import com.mmazanek.atp.model.inference.Inference;
 import com.mmazanek.atp.model.fol.QuantifierFormula.Quantifier;
 
+/**
+ * TPTP format marshaller
+ * 
+ * @author Martin Mazanek
+ */
 public class TptpMarshaller implements LogicMarshaller {
 
 	private PrintStream writer;

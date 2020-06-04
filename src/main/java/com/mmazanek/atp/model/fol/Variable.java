@@ -5,6 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Representation of a variable
+ * 
+ * Note: there is only one object per given variable.
+ * 
+ * @author Martin Mazanek
+ */
 public class Variable extends Term {
 	
 	private int id;

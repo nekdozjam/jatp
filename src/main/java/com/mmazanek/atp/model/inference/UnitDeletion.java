@@ -2,6 +2,11 @@ package com.mmazanek.atp.model.inference;
 
 import com.mmazanek.atp.model.KnowledgeEntry;
 
+/**
+ * Unit deletion inference step
+ * 
+ * @author Martin Mazanek
+ */
 public class UnitDeletion extends Inference {
 
 	private static final String NAME = "unit_deletion";

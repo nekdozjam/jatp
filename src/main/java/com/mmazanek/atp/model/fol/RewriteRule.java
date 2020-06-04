@@ -5,6 +5,13 @@ import java.util.List;
 
 import com.mmazanek.atp.model.KnowledgeEntry;
 
+/**
+ * Representation of a paramodulation rewriting rule
+ * 
+ * This class contains data for a single rewrite rule, so the equalities dont have to be looked up over and over again.
+ * 
+ * @author Martin Mazanek
+ */
 public class RewriteRule {
 	private Term from;
 	private Term to;
@@ -18,18 +25,38 @@ public class RewriteRule {
 		this.entry = entry;
 	}
 	
+	/**
+	 * Get the term to be rewritten
+	 * @return term to be rewritten
+	 */
 	public Term getFrom() {
 		return from;
 	}
 	
+	/**
+	 * Get the new term
+	 * @return term
+	 */
 	public Term getTo() {
 		return to;
 	}
 	
+	/**
+	 * Get a List of literals that should be added after rewriting
+	 * @return list of literals
+	 */
 	public List<Literal> getAddedLiterals() {
 		return addedLiterals;
 	}
 	
+	/**
+	 * Apply this rule to a clause
+	 * 
+	 * This method rewrites all positions of from term to to term.
+	 * 
+	 * @param clause
+	 * @return List of all rewriten clauses
+	 */
 	public List<Clause> apply(Clause clause) {
 		List<Clause> res = new LinkedList<>();
 		List<Term.Position> positions = clause.find(from);

@@ -2,6 +2,11 @@ package com.mmazanek.atp.model.inference;
 
 import com.mmazanek.atp.model.KnowledgeEntry;
 
+/**
+ * Binary resolution inference step
+ * 
+ * @author Martin Mazanek
+ */
 public class BinaryResolution extends Inference {
 
 	private static final String NAME = "resolution";

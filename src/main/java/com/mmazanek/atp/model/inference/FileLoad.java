@@ -1,5 +1,10 @@
 package com.mmazanek.atp.model.inference;
 
+/**
+ * Inference step describing that given clause was loaded from a file.
+ * 
+ * @author Martin Mazanek
+ */
 public class FileLoad extends Inference {
 
 	private static final String NAME = "file";

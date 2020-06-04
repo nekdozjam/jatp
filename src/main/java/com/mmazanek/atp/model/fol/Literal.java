@@ -9,8 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.mmazanek.atp.model.fol.Term.Position;
-
+/**
+ * Representation of a logical literal
+ * 
+ * @author Martin Mazanek
+ */
 public class Literal implements Formula {
 	
 	private boolean negated;
@@ -23,7 +26,7 @@ public class Literal implements Formula {
 	public static long literalsDeduces = 0;
 	public static long literalsReplaceOrSubstitute = 0;
 	
-	
+	// Concstant literal for TRUE
 	public static final Literal TRUE = new Literal(PredicateSymbol.TRUE, false, Collections.emptyList()) {
 		@Override
 		public Formula pushNegations(boolean negate) {
@@ -31,6 +34,7 @@ public class Literal implements Formula {
 		}
 	};
 	
+	// Constant literal for FALSE
 	public static final Literal FALSE = new Literal(PredicateSymbol.FALSE, false, Collections.emptyList()) {
 		@Override
 		public Formula pushNegations(boolean negate) {
@@ -38,6 +42,13 @@ public class Literal implements Formula {
 		}
 	};
 	
+	/**
+	 * Create a new instance
+	 * 
+	 * @param predicate predicate symbol of this literal
+	 * @param negated whenever this literal should be negated
+	 * @param terms parameters for the predicate symbol. Not {@code null}
+	 */
 	public Literal(PredicateSymbol predicate, boolean negated, List<Term> terms) {
 		if (predicate.getArity() != terms.size()) {
 			throw new IllegalArgumentException("Predicate symbol arity does not correspond to the number of terms provided!");
@@ -47,14 +58,31 @@ public class Literal implements Formula {
 		this.predicate = predicate;
 	}
 	
+	/**
+	 * Getter for predicate symbol
+	 * @return predicate symbol
+	 */
 	public PredicateSymbol getPredicate() {
 		return predicate;
 	}
 	
+	/**
+	 * Returns list of parameters for the predicate symbol
+	 * @return List of parameters
+	 */
 	public List<Term> getTerms() {
 		return terms;
 	}
 	
+	/**
+	 * Whenever this literal is negated
+	 * @return
+	 */
+	public boolean isNegated() {
+		return negated;
+	}
+
+	@Override
 	public Literal replace(Map<Variable, Term> replaceMap) {
 		List<Term> terms2 = new LinkedList<>();
 		for (Term t : terms) {
@@ -62,10 +90,6 @@ public class Literal implements Formula {
 			terms2.add(term2);
 		}
 		return new Literal(predicate, negated, terms2);
-	}
-	
-	public boolean isNegated() {
-		return negated;
 	}
 	
 	@Override
@@ -112,6 +136,12 @@ public class Literal implements Formula {
 		return newLiteral;
 	}
 	
+	/**
+	 * 
+	 * @param literal
+	 * @param replaceMap
+	 * @return
+	 */
 	public boolean deduces(Literal literal, Map<Variable, Term> replaceMap) {
 		literalsDeduces++;
 		if (this.negated != literal.negated) {
@@ -129,6 +159,11 @@ public class Literal implements Formula {
 		return true;
 	}
 	
+	/**
+	 * 
+	 * @param other
+	 * @return
+	 */
 	public Substitution mgu(Literal other) {
 		literalsMgu++;
 		Substitution s = new Substitution();
@@ -146,6 +181,11 @@ public class Literal implements Formula {
 		return s;
 	}
 	
+	/**
+	 * 
+	 * @param term
+	 * @return
+	 */
 	public List<Term.Position> find(Term term) {
 		literalsFind++;
 		List<Term.Position> termPositions = new LinkedList<>();
@@ -163,7 +203,12 @@ public class Literal implements Formula {
 		return termPositions;
 	}
 	
-
+	/**
+	 * 
+	 * @param position
+	 * @param term
+	 * @return
+	 */
 	public Literal replaceOrSubstitute(Term.Position position, Term term) {
 		literalsReplaceOrSubstitute++;
 		if (position.isFinal()) {
